@@ -17,35 +17,59 @@ class SFRelationships(unittest.TestCase):
     def test_sf_not_equals(self):
         self.assertFalse(sfEquals('P1', 'P2'))
 
-    def test_sf_overlaps(self):
-        self.assertTrue(sfOverlaps('P1', 'P1'))
+    # def test_sf_overlaps(self):
+    #     self.assertTrue(sfOverlaps('P1', 'P1'))
+    #
+    # def test_sf_not_overlaps(self):
+    #     self.assertFalse(sfOverlaps('P1', 'P2'))
+    #
+    # def test_sf_overlaps_different_res(self):
+    #     self.assertTrue(sfOverlaps('P100', 'P1'))
+    #
+    # def test_sf_overlaps_list_str(self):
+    #     self.assertTrue(sfOverlaps(['P1', 'P2'], 'P100'))
+    #
+    # def test_sf_not_overlaps_list_str(self):
+    #     self.assertFalse(sfOverlaps(['P1', 'P2'], 'P3'))
+    #
+    # def test_sf_disjoint(self):
+    #     self.assertFalse(sfDisjoint('P1', 'P1'))
+    #
+    # def test_sf_not_disjoint(self):
+    #     self.assertTrue(sfDisjoint('P1', 'P2'))
+    #
+    # def test_sf_disjoint_different_res(self):
+    #     self.assertFalse(sfDisjoint('P100', 'P1'))
+    #
+    # def test_sf_disjoint_list_str(self):
+    #     self.assertFalse(sfDisjoint(['P1', 'P2'], 'P100'))
+    #
+    # def test_sf_disjoint_list_str(self):
+    #     self.assertTrue(sfDisjoint(['P1', 'P2'], 'P3'))
 
-    def test_sf_not_overlaps(self):
-        self.assertFalse(sfOverlaps('P1', 'P2'))
+    def test_sf_contains(self):
+        self.assertTrue(sfContains('P1', 'P123'))
 
-    def test_sf_overlaps_different_res(self):
-        self.assertTrue(sfOverlaps('P100', 'P1'))
+    def test_sf_not_contains_within(self):
+        self.assertFalse(sfContains('P1', ['P1', 'P2']))
 
-    def test_sf_overlaps_list_str(self):
-        self.assertTrue(sfOverlaps(['P1', 'P2'], 'P100'))
+    def test_sf_not_contains_equal(self):
+        self.assertFalse(sfContains('P1', 'P1'))
 
-    def test_sf_not_overlaps_list_str(self):
-        self.assertFalse(sfOverlaps(['P1', 'P2'], 'P3'))
+    def test_sf_not_contains_overlaps(self):
+        self.assertFalse(sfContains(['P1', 'P2'], ['P2', 'P3']))
 
-    def test_sf_disjoint(self):
-        self.assertFalse(sfDisjoint('P1', 'P1'))
+    def test_sf_within(self):
+        self.assertTrue(sfWithin('P1', ['P1', 'P2']))
 
-    def test_sf_not_disjoint(self):
-        self.assertTrue(sfDisjoint('P1', 'P2'))
+    def test_sf_not_within_contains(self):
+        self.assertFalse(sfWithin('P1', 'P123'))
 
-    def test_sf_disjoint_different_res(self):
-        self.assertFalse(sfDisjoint('P100', 'P1'))
+    def test_sf_not_within_equal(self):
+        self.assertFalse(sfWithin('P1', 'P1'))
 
-    def test_sf_disjoint_list_str(self):
-        self.assertFalse(sfDisjoint(['P1', 'P2'], 'P100'))
-
-    def test_sf_disjoint_list_str(self):
-        self.assertTrue(sfDisjoint(['P1', 'P2'], 'P3'))
+    def test_sf_not_within_overlaps(self):
+        self.assertFalse(sfWithin(['P1', 'P2'], ['P2', 'P3']))
 
 if __name__ == "__main__":
     unittest.main()

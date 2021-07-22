@@ -49,6 +49,27 @@ class DGGSsfRelationships:
         return False
 
     @classmethod
+    def sfContains(cls, cells_one: Union[str, list], cells_two: [str, list]):
+        # first check cells_one and cells_two are not equal
+        SF = cls(cells_one, cells_two)
+        if not cls.sfEqualsBool(SF.coll_1.cell_suids, SF.coll_2.cell_suids):
+            # then if cells_one + cells_two = cells_one, cells_one must contain cells_two
+            if (SF.coll_1 + SF.coll_2).cell_suids == SF.coll_1.cell_suids:
+                return True
+        return False
+
+    @classmethod
+    def sfWithin(cls, cells_one: Union[str, list], cells_two: [str, list]):
+        # first check cells_one and cells_two are not equal
+        SF = cls(cells_one, cells_two)
+        if not cls.sfEqualsBool(SF.coll_1.cell_suids, SF.coll_2.cell_suids):
+            # then if cells_one + cells_two = cells_two, cells_two must contain cells_one
+            if (SF.coll_1 + SF.coll_2).cell_suids == SF.coll_2.cell_suids:
+                return True
+        return False
+
+
+    @classmethod
     def sfOverlapsBool(cls, cells_one: Union[str, list], cells_two: [str, list]):
         """
         :param cells_one: a string or list of strings representing cells

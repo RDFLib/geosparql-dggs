@@ -53,7 +53,7 @@ class CellNeighbours(unittest.TestCase):
             CellCollection(['R1', 'R3', 'R5', 'R7']).cell_suids)
 
 
-class CellCollections(unittest.TestCase):
+class CellCollectionInstantiation(unittest.TestCase):
 
     def test_collection_creation(self):
         assert type(CellCollection(['R1', 'R4', 'R5'])) == CellCollection
@@ -66,10 +66,14 @@ class CellCollections(unittest.TestCase):
         self.assertEqual((CellCollection(['R4', 'R1', 'R5', 'R5']).cell_suids),
                          ['R1', 'R4', 'R5'])
 
-    def test_resolution_repitition(self):
+    def test_absorb(self):
         self.assertEqual((CellCollection(['R1', 'R12', 'R123']).cell_suids),
                          ['R1'])
 
+class CellCollectionsOperations(unittest.TestCase):
+
+    def test_collection_addition(self):
+        assert (CellCollection(['R1']) + CellCollection(['R2'])).cell_suids == ['R1', 'R2']
 
 if __name__ == "__main__":
     unittest.main()

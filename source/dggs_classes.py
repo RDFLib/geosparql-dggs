@@ -35,6 +35,14 @@ class CellCollection:
     def __repr__(self):
         return ' '.join(self.cell_suids)
 
+    def __add__(self, other):
+        new_suids = list(set(self.cell_suids).union(set(other.cell_suids)))
+        return CellCollection(new_suids)
+
+    def __sub__(self, other):
+        new_suids = list(set(self.cell_suids).difference(set(other.cell_suids)))
+        # check for overlap of new suids with any of this CellCollection
+
     def validate(self):
         # input can be:
         # - a string (for the suid of a single cell)
@@ -43,6 +51,8 @@ class CellCollection:
         # - a list of Cell objects
         # the first three types of input are coerced to a list of Cell objects
 
+        if not isinstance(self.cells, (str, list, Cell)):
+            raise ValueError("Input must be a string representing a cell suid, Cell, or lists of these.")
         # all cells must have the same CRS
         if isinstance(self.cells, str):
             self.cells = [Cell(self.cells)]
@@ -51,6 +61,8 @@ class CellCollection:
         # at this point instances representing a single Cell have been coerced to a list with a Cell
         # convert lists of strings to lists of Cells
         assert isinstance(self.cells, list)
+        if len(self.cells) == 0:
+            raise ValueError("Cell Collections cannot be empty.")
         if isinstance(self.cells[0], str):
             self.cells = [Cell(cell_str) for cell_str in self.cells]
         # finally check we have a list of Cell objects with consistent CRSs
