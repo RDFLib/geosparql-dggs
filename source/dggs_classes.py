@@ -7,9 +7,12 @@ N_crs = {'auspix': 3}
 class CellCollection:
     """
     DGGS Cell Collection class.
-    A collection of Cell instances
-    ***NB cells are handled as being un-ordered in this implementation.***
-
+    A collection of Cell instances.
+    Includes:
+        - compression (where all children of a parent are present, replace with their parent)
+        - deduplication (removal of repeated cells)
+        - absorb (where a child and its parent are present, remove the child)
+        - ordering (alphabetical and numerical based on suids)
     """
 
     def __init__(self, cells):
@@ -21,22 +24,31 @@ class CellCollection:
         self.crs = self.cells[0].crs
         self.kind = self.cells[0].kind
         self.cell_suids = [cell.suid for cell in self.cells]
+        # standardise the cells
         self.compress()
         self.deduplicate()
         self.absorb()
         self.order()
+        # regenerate the cells as they may have changed during compression through to ordering
+        self.cells = [Cell(suid) for suid in self.cell_suids]
 
     def __repr__(self):
         return ' '.join(self.cell_suids)
 
     def validate(self):
-        # input can be a list of strings
+        # input can be:
+        # - a string (for the suid of a single cell)
+        # - a list of strings (for suids representing multiple cells)
+        # - a single Cell
+        # - a list of Cell objects
+        # the first three types of input are coerced to a list of Cell objects
+
         # all cells must have the same CRS
         if isinstance(self.cells, str):
             self.cells = [Cell(self.cells)]
         if isinstance(self.cells, Cell):
             self.cells = [self.cells]
-        # at this point single instances have been coerced to a list with a Cell
+        # at this point instances representing a single Cell have been coerced to a list with a Cell
         # convert lists of strings to lists of Cells
         assert isinstance(self.cells, list)
         if isinstance(self.cells[0], str):
@@ -62,6 +74,7 @@ class CellCollection:
         # compress
         if self.kind == 'rHEALPix':
             compressor = self._rhealpix_compress
+        # implement other types of grids here
         else:
             raise NotImplementedError
         compressor()
@@ -70,6 +83,7 @@ class CellCollection:
     def order(self):
         if self.kind == 'rHEALPix':
             orderer = self._rhealpix_order
+        # implement other types of grids here
         else:
             raise NotImplementedError
         orderer()
@@ -228,13 +242,13 @@ class Cell:
         # for i in range(N - 1, N ** 2, N):
         #     an[i]["right"] = an[i]["right"] - N
 
-    def neighbours_suids(self, include_diagonals=False):
+    def neighbours(self, include_diagonals=False):
         if include_diagonals:
             raise NotImplementedError('Not yet implemented')
         neighbours = []
         for direction in ("up", "down", "left", "right"):
             neighbours.append(self.neighbour(direction))
-        return set([i.suid for i in neighbours])
+        return CellCollection(neighbours)
 
     def neighbour(self, direction):
         an = self.atomic_neighbours()

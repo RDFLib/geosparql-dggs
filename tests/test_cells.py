@@ -13,45 +13,44 @@ class CellValid(unittest.TestCase):
 
     def test_dggs_geom_format_invalid_1(self):
         with self.assertRaises(AssertionError):
-            Cell('H123', crs='auspix', kind='rHEALPix')
+            Cell('H123')
 
     def test_dggs_geom_format_invalid_2(self):
         with self.assertRaises(AssertionError):
-            Cell('HH', crs='auspix', kind='rHEALPix')
+            Cell('HH')
 
     # def test_dggs_geom_compression_1(self):
-    #     assert Cell(['P012', 'N013'], kind='rHEALPix').suid == ['N013', 'P012']
+    #     assert Cell(['P012', 'N013']).suid == ['N013', 'P012']
 
     def test_dggs_geom_single_cell(self):
-        assert Cell('P012', crs='auspix', kind='rHEALPix').suid == ('P', 0, 1, 2)
+        assert Cell('P012').suid == ('P', 0, 1, 2)
 
 
 class CellNeighbour(unittest.TestCase):
 
     def test_neighbour_up(self):
         self.assertEqual(
-            Cell('R41', kind='rHEALPix').neighbour('up').suid, ('R', 1, 7))
+            Cell('R41').neighbour('up').suid, ('R', 1, 7))
 
     def test_neighbour_down(self):
         self.assertEqual(
-            Cell('R47', kind='rHEALPix').neighbour('down').suid, ('R', 7, 1))
+            Cell('R47').neighbour('down').suid, ('R', 7, 1))
 
     def test_neighbour_left(self):
         self.assertEqual(
-            Cell('R43', kind='rHEALPix').neighbour('left').suid, ('R', 3, 5))
+            Cell('R43').neighbour('left').suid, ('R', 3, 5))
 
     def test_neighbour_right(self):
         self.assertEqual(
-            Cell('R45', kind='rHEALPix').neighbour('right').suid, ('R', 5, 3))
+            Cell('R45').neighbour('right').suid, ('R', 5, 3))
 
 
 class CellNeighbours(unittest.TestCase):
 
     def test_neighbours(self):
         self.assertEqual(
-            Cell('R4', kind='rHEALPix').neighbours_suids(),
-            {('R', 1), ('R', 3), ('R', 5), ('R', 7)}
-            )
+            Cell('R4').neighbours().cell_suids,
+            CellCollection(['R1', 'R3', 'R5', 'R7']).cell_suids)
 
 
 class CellCollections(unittest.TestCase):
