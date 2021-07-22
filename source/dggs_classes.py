@@ -17,30 +17,55 @@ class CellCollection:
         :param cells: a list of Cell objects
         """
         self.cells = cells
-        self.crs = cells[0].crs
-        self.kind = cells[0].kind
         self.validate()
-        self.cell_suids = [cell.suid for cell in cells]
-        self.compress_and_dedupe()
+        self.crs = self.cells[0].crs
+        self.kind = self.cells[0].kind
+        self.cell_suids = [cell.suid for cell in self.cells]
+        self.compress()
+        self.deduplicate()
+        self.absorb()
         self.order()
-        self.cells = [Cell(suid, crs=self.crs) for suid in self.cell_suids]
 
+    def __repr__(self):
+        return ' '.join(self.cell_suids)
 
     def validate(self):
+        # input can be a list of strings
         # all cells must have the same CRS
+        if isinstance(self.cells, str):
+            self.cells = [Cell(self.cells)]
+        if isinstance(self.cells, Cell):
+            self.cells = [self.cells]
+        # at this point single instances have been coerced to a list with a Cell
+        # convert lists of strings to lists of Cells
+        assert isinstance(self.cells, list)
+        if isinstance(self.cells[0], str):
+            self.cells = [Cell(cell_str) for cell_str in self.cells]
+        # finally check we have a list of Cell objects with consistent CRSs
         for cell in self.cells:
             assert isinstance(cell, Cell)
-            assert cell.crs == self.crs
 
-    def compress_and_dedupe(self):
-        # deduplicate
+    def deduplicate(self):
+        # remove repeated instances of the same cell
         self.cell_suids = list(set(self.cell_suids))
+
+    def absorb(self):
+        # absorb child cells in to parent cells (where the parent cell exists)
+        # e.g. P1 P12 is equivalent to P1, so remove P12 if present
+        for suid in self.cell_suids:
+            for i in range(len(suid)-1):
+                ancestor = suid[0:i+1]
+                if ancestor in self.cell_suids:
+                    self.cell_suids = list(set(self.cell_suids) - set([suid]))
+
+    def compress(self):
         # compress
         if self.kind == 'rHEALPix':
             compressor = self._rhealpix_compress
         else:
             raise NotImplementedError
         compressor()
+
 
     def order(self):
         if self.kind == 'rHEALPix':
@@ -93,10 +118,19 @@ class Cell:
             self.suid = suid
         self.validate()
 
+    def __repr__(self):
+        return ''.join([str(i) for i in self.suid])
+
     def suid_from_str(self, suid_str):
         """
         Creates a cell tuple from a string
         """
+        # first character should be in the zero cells
+        assert suid_str[0] in zero_cells
+        # any remaining characters should be digits in the range 0..N^2
+        if len(suid_str) > 1:
+            for i in suid_str[1:]:
+                assert int(i) in range(N_crs[self.crs]**2)
         return tuple([suid_str[0]] + [int(i) for i in suid_str[1:]])
 
     def validate(self):

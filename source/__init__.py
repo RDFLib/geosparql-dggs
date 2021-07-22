@@ -1,5 +1,5 @@
 from source.dggs_functions import DGGSsfRelationships
 
-sfEquals = DGGSsfRelationships.sfEquals
-sfOverlaps = DGGSsfRelationships.sfOverlaps
-sfDisjoint = DGGSsfRelationships.sfDisjoint
+sfEquals = DGGSsfRelationships.sfEqualsBool
+sfOverlaps = DGGSsfRelationships.sfOverlapsBool
+sfDisjoint = DGGSsfRelationships.sfDisjointBool

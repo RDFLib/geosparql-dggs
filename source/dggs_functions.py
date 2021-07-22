@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Union, List
 from source.dggs_classes import Cell, CellCollection
 """
@@ -36,7 +37,7 @@ class DGGSsfRelationships:
         self.coll_2 = CellCollection(cells_list_2)
 
     @classmethod
-    def sfEquals(cls, cells_one: Union[str, list], cells_two: [str, list]):
+    def sfEqualsBool(cls, cells_one: Union[str, list], cells_two: [str, list]):
         """
         :param cells_one: a string or list of strings representing cells
         :param cells_two: a string or list of strings representing cells
@@ -48,7 +49,7 @@ class DGGSsfRelationships:
         return False
 
     @classmethod
-    def sfOverlaps(cls, cells_one: Union[str, list], cells_two: [str, list]):
+    def sfOverlapsBool(cls, cells_one: Union[str, list], cells_two: [str, list]):
         """
         :param cells_one: a string or list of strings representing cells
         :param cells_two: a string or list of strings representing cells
@@ -58,63 +59,89 @@ class DGGSsfRelationships:
         return region_region_intersection(SF.coll_1.cell_suids, SF.coll_2.cell_suids)
 
     @classmethod
-    def sfDisjoint(cls, cells_one: Union[str, list], cells_two: [str, list]):
-        return not cls.sfOverlaps(cells_one, cells_two)
+    def sfDisjointBool(cls, cells_one: Union[str, list], cells_two: [str, list]):
+        SF = cls(cells_one, cells_two)
+        return not region_region_intersection(SF.coll_1.cell_suids, SF.coll_2.cell_suids)
 
 
-def cell_cell_intersection(cellOne: str, cellTwo: str, return_relationships=False):
+def region_region_intersection(region_one: list, region_two: list, query):
     """
     Determines whether two DGGS suid overlap.
     Where suid are of different resolution, they will have different suid lengths. The zip function truncates the longer
     to be the same length as the shorter, producing two lists for comparison. If these lists are equal, the suid overlap.
     :param return_relationships: whether to return a dictionary of relationships between
-    :param cellOne: the first DGGS cell
-    :param cellTwo: the second DGGS cell
+    :param cell_one: the first DGGS cell
+    :param cell_two: the second DGGS cell
     :return: True if overlaps
     """
-    intersection = True
-    for i, j in zip(cellOne, cellTwo):
-        if i != j:
-            intersection = False
-            break
-    if return_relationships:
-        relationships = {}
-        if not intersection:
-            return False, relationships["disjoint"].append((cellOne, cellTwo))
-        else:
-            if len(cellOne) < len(cellTwo):
-                relationships["contains"].append((cellOne, cellTwo))
-            elif len(cellOne) > len(cellTwo):
-                relationships["within"].append((cellOne, cellTwo))
-            elif len(cellOne) == len(cellTwo):
-                relationships["equal"].append((cellOne, cellTwo))
-            return True, relationships
-    else:
-        return intersection
+    relationships = defaultdict(list)
+    for cell_one in region_one:
+        for cell_two in region_two:
+            intersects = True
+            for i, j in zip(cell_one, cell_two):
+                if i != j:
+                    intersects = False
+                    relationships["disjoint"].append((cell_one, cell_two))
+                    break
+            if intersects:
+                if len(cell_one) < len(cell_two):
+                    relationships["contains"].append((cell_one, cell_two))
+                elif len(cell_one) > len(cell_two):
+                    relationships["within"].append((cell_one, cell_two))
+                elif len(cell_one) == len(cell_two):
+                    relationships["equal"].append((cell_one, cell_two))
+    # summary = set(relationships.keys())
+    # if summary == {'contains', 'equal'} or summary == {'contains', 'disjoint'} or summary == {'contains', 'equal',
+    #                                                                                           'disjoint'}:
+    #     summary = {'contains'}
+    # elif summary == {'within', 'equal'} or summary == {'within', 'disjoint'} summary == {'within', 'equal',
+    #                                                                                           'disjoint'}:
+    #     summary = {'within'}
+    #
+    #     return_rel = 'contains'
+    # if summary == {'within'}:
+    #     return_rel = 'within'
+    # if summary == {'within', 'contains'}
+    #     return_rel = 'overlaps'
+    # if len()
 
-def cell_region_intersection(cell: str, region: set):
-    """
-    Determine whether a cell overlaps with any cell in a list of suid
-    :param cell: a DGGS cell
-    :param region: a list of DGGS suid
-    :return: True if the cell overlaps the region
-    """
-    for component_cell in region:
-        if cell_cell_intersection(cell, component_cell):
-            return True
-    return False
+    # if return_relationships:
+    #     if not intersection:
+    #         return False, relationships["disjoint"].append((cell_one, cell_two))
+    #     else:
+    #         if len(cell_one) < len(cell_two):
+    #             relationships["contains"].append((cell_one, cell_two))
+    #         elif len(cell_one) > len(cell_two):
+    #             relationships["within"].append((cell_one, cell_two))
+    #         elif len(cell_one) == len(cell_two):
+    #             relationships["equal"].append((cell_one, cell_two))
+    #         return True, relationships
+    # else:
+    #     return intersection
 
-def region_region_intersection(regionOne: set, regionTwo: set):
-    """
-    Determine whether a cell overlaps with any cell in a list of suid
-    :param regionOne: a DGGS region
-    :param regionTwo: a DGGS region
-    :return: True if the regions overlap
-    """
-    for component_cell in regionOne:
-        if cell_region_intersection(component_cell, regionTwo):
-            return True
-    return False
+# def cell_region_intersection(cell: str, region: set, return_relationships=False, relationships={}):
+#     """
+#     Determine whether a cell overlaps with any cell in a list of suid
+#     :param cell: a DGGS cell
+#     :param region: a list of DGGS suid
+#     :return: True if the cell overlaps the region
+#     """
+#     for component_cell in region:
+#         if cell_cell_intersection(cell, component_cell):
+#             return True
+#     return False
+#
+# def region_region_intersection(regionOne: set, regionTwo: set, return_relationships=False, relationships={}):
+#     """
+#     Determine whether a cell overlaps with any cell in a list of suid
+#     :param regionOne: a DGGS region
+#     :param regionTwo: a DGGS region
+#     :return: True if the regions overlap
+#     """
+#     for component_cell in regionOne:
+#         if cell_region_intersection(component_cell, regionTwo):
+#             return True
+#     return False
 
 def canonical_form(cells_one, cells_two):
     # coerces strings and lists of strings to sets of strings, this is to:
