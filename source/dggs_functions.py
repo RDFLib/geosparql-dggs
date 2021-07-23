@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import Union, List
+from typing import Union
 from source.dggs_classes import Cell, CellCollection
 
 """
@@ -33,7 +32,9 @@ geof:sfOverlaps(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
 
 
 class DGGSsfRelationships:
-    def __init__(self, cell_or_cells_1: Union[str, list], cell_or_cells_2: Union[str, list]):
+    def __init__(
+        self, cell_or_cells_1: Union[str, list], cell_or_cells_2: Union[str, list]
+    ):
         self.coll_1 = CellCollection(cell_or_cells_1)
         self.coll_2 = CellCollection(cell_or_cells_2)
 
@@ -87,11 +88,12 @@ class DGGSsfRelationships:
         :return: boolean as to whether the cell/cells overlap
         """
         # implemented as a negative test for disjoint, equals, contains, and within
-        if \
-            not cls.sfDisjoint(cells_one, cells_two) \
-            and not cls.sfEqualsBool(cells_one, cells_two) \
-            and not cls.sfContains(cells_one, cells_two) \
-            and not cls.sfWithin(cells_one, cells_two):
+        if (
+            not cls.sfDisjoint(cells_one, cells_two)
+            and not cls.sfEqualsBool(cells_one, cells_two)
+            and not cls.sfContains(cells_one, cells_two)
+            and not cls.sfWithin(cells_one, cells_two)
+        ):
             return True
         return False
 
@@ -103,7 +105,9 @@ class DGGSsfRelationships:
         :return: boolean as to whether cells_one and cells_two are disjoint i.e. no kind of spatial relationship
         """
         SF = cls(cells_one, cells_two)
-        return not region_region_intersection(SF.coll_1.cell_suids, SF.coll_2.cell_suids)
+        return not region_region_intersection(
+            SF.coll_1.cell_suids, SF.coll_2.cell_suids
+        )
 
     @classmethod
     def sfIntersects(cls, cells_one: Union[str, list], cells_two: [str, list]):
@@ -210,6 +214,7 @@ def region_region_intersection(region_one: list, region_two: list):
 #         if cell_region_intersection(component_cell, regionTwo):
 #             return True
 #     return False
+
 
 def canonical_form(cells_one, cells_two):
     # coerces strings and lists of strings to sets of strings, this is to:

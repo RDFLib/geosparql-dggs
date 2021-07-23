@@ -1,7 +1,7 @@
 from itertools import product
 
 zero_cells = ["N", "O", "P", "Q", "R", "S"]
-N_crs = {'auspix': 3}
+N_crs = {"auspix": 3}
 
 
 class CellCollection:
@@ -35,7 +35,7 @@ class CellCollection:
         self.min_resolution = min([cell.resolution for cell in self.cells])
 
     def __repr__(self):
-        return ' '.join(self.cell_suids)
+        return " ".join(self.cell_suids)
 
     def __add__(self, other):
         new_suids = list(set(self.cell_suids).union(set(other.cell_suids)))
@@ -52,7 +52,7 @@ class CellCollection:
     #
     #
     #     new_suids = list(set(self.cell_suids).difference(set(other.cell_suids)))
-        # check for overlap of new suids with any of this CellCollection
+    # check for overlap of new suids with any of this CellCollection
 
     def __len__(self):
         return len(self.cell_suids)
@@ -73,7 +73,9 @@ class CellCollection:
         # the first three types of input are coerced to a list of Cell objects
 
         if not isinstance(self.cells, (str, list, Cell)):
-            raise ValueError("Input must be a string representing a cell suid, Cell, or lists of these.")
+            raise ValueError(
+                "Input must be a string representing a cell suid, Cell, or lists of these."
+            )
         # all cells must have the same CRS
         if isinstance(self.cells, str):
             self.cells = [Cell(self.cells)]
@@ -98,23 +100,22 @@ class CellCollection:
         # absorb child cells in to parent cells (where the parent cell exists)
         # e.g. P1 P12 is equivalent to P1, so remove P12 if present
         for suid in self.cell_suids:
-            for i in range(len(suid)-1):
-                ancestor = suid[0:i+1]
+            for i in range(len(suid) - 1):
+                ancestor = suid[0 : i + 1]
                 if ancestor in self.cell_suids:
                     self.cell_suids = list(set(self.cell_suids) - set([suid]))
 
     def compress(self):
         # compress
-        if self.kind == 'rHEALPix':
+        if self.kind == "rHEALPix":
             compressor = self._rhealpix_compress
         # implement other types of grids here
         else:
             raise NotImplementedError
         compressor()
 
-
     def order(self):
-        if self.kind == 'rHEALPix':
+        if self.kind == "rHEALPix":
             orderer = self._rhealpix_order
         # implement other types of grids here
         else:
@@ -137,11 +138,15 @@ class CellCollection:
     def _rhealpix_order(self):
         """Orders a list of Cell IDs"""
         # convert the first char of each Cell ID to a string representation of a number
-        nums = [str(zero_cells.index(x[0])) + ''.join([str(i) for i in x[1:]]) for x in self.cell_suids]
+        nums = [
+            str(zero_cells.index(x[0])) + "".join([str(i) for i in x[1:]])
+            for x in self.cell_suids
+        ]
         # sort numerical Cell IDs as per integers
         s = sorted(nums, key=int)
         # convert first character back to a letter
         self.cell_suids = [zero_cells[int(x[0])] + x[1:] for x in s]
+
 
 class Cell:
     """
@@ -154,7 +159,8 @@ class Cell:
     Can be extended to support validation and compression for different CRS's
     Currently supports rHEALPix
     """
-    def __init__(self, suid, kind='rHEALPix', crs='auspix'):
+
+    def __init__(self, suid, kind="rHEALPix", crs="auspix"):
         assert isinstance(suid, (str, tuple))
         self.crs = crs
         self.kind = kind
@@ -164,10 +170,10 @@ class Cell:
         elif isinstance(suid, tuple):
             self.suid = suid
         self.validate()
-        self.resolution = len(self.suid)-1
+        self.resolution = len(self.suid) - 1
 
     def __repr__(self):
-        return ''.join([str(i) for i in self.suid])
+        return "".join([str(i) for i in self.suid])
 
     def suid_from_str(self, suid_str):
         """
@@ -178,11 +184,11 @@ class Cell:
         # any remaining characters should be digits in the range 0..N^2
         if len(suid_str) > 1:
             for i in suid_str[1:]:
-                assert int(i) in range(N_crs[self.crs]**2)
+                assert int(i) in range(N_crs[self.crs] ** 2)
         return tuple([suid_str[0]] + [int(i) for i in suid_str[1:]])
 
     def validate(self):
-        if self.kind == 'rHEALPix':
+        if self.kind == "rHEALPix":
             format_validator = self._rhealpix_validator
         else:
             raise NotImplementedError
@@ -197,7 +203,25 @@ class Cell:
     def atomic_neighbours(self):
         # atomic neighbours created from rhealpix
         # TODO memoize using code below
-        n3_atomic_neighbours = {3: {'O': {'left': 'R', 'right': 'P', 'down': 'S', 'up': 'N'}, 'P': {'left': 'O', 'right': 'Q', 'down': 'S', 'up': 'N'}, 'Q': {'left': 'P', 'right': 'R', 'down': 'S', 'up': 'N'}, 'R': {'left': 'Q', 'right': 'O', 'down': 'S', 'up': 'N'}, 'N': {'down': 'O', 'right': 'P', 'up': 'Q', 'left': 'R'}, 'S': {'up': 'O', 'right': 'P', 'down': 'Q', 'left': 'R'}, 0: {'left': 2, 'right': 1, 'up': 6, 'down': 3}, 1: {'left': 0, 'right': 2, 'up': 7, 'down': 4}, 2: {'left': 1, 'right': 0, 'up': 8, 'down': 5}, 3: {'left': 5, 'right': 4, 'up': 0, 'down': 6}, 4: {'left': 3, 'right': 5, 'up': 1, 'down': 7}, 5: {'left': 4, 'right': 3, 'up': 2, 'down': 8}, 6: {'left': 8, 'right': 7, 'up': 3, 'down': 0}, 7: {'left': 6, 'right': 8, 'up': 4, 'down': 1}, 8: {'left': 7, 'right': 6, 'up': 5, 'down': 2}}}
+        n3_atomic_neighbours = {
+            3: {
+                "O": {"left": "R", "right": "P", "down": "S", "up": "N"},
+                "P": {"left": "O", "right": "Q", "down": "S", "up": "N"},
+                "Q": {"left": "P", "right": "R", "down": "S", "up": "N"},
+                "R": {"left": "Q", "right": "O", "down": "S", "up": "N"},
+                "N": {"down": "O", "right": "P", "up": "Q", "left": "R"},
+                "S": {"up": "O", "right": "P", "down": "Q", "left": "R"},
+                0: {"left": 2, "right": 1, "up": 6, "down": 3},
+                1: {"left": 0, "right": 2, "up": 7, "down": 4},
+                2: {"left": 1, "right": 0, "up": 8, "down": 5},
+                3: {"left": 5, "right": 4, "up": 0, "down": 6},
+                4: {"left": 3, "right": 5, "up": 1, "down": 7},
+                5: {"left": 4, "right": 3, "up": 2, "down": 8},
+                6: {"left": 8, "right": 7, "up": 3, "down": 0},
+                7: {"left": 6, "right": 8, "up": 4, "down": 1},
+                8: {"left": 7, "right": 6, "up": 5, "down": 2},
+            }
+        }
         return n3_atomic_neighbours[N_crs[self.crs]]
 
         # north_square = south_square = 0
@@ -286,10 +310,10 @@ class Cell:
         for direction in ("up", "down", "left", "right"):
             neighbours.append(self.neighbour(direction))
         if include_diagonals:
-            neighbours.append(self.neighbour('up').neighbour('left'))
-            neighbours.append(self.neighbour('up').neighbour('right'))
-            neighbours.append(self.neighbour('down').neighbour('left'))
-            neighbours.append(self.neighbour('down').neighbour('right'))
+            neighbours.append(self.neighbour("up").neighbour("left"))
+            neighbours.append(self.neighbour("up").neighbour("right"))
+            neighbours.append(self.neighbour("down").neighbour("left"))
+            neighbours.append(self.neighbour("down").neighbour("right"))
         return CellCollection(neighbours)
 
     def neighbour(self, direction):
@@ -306,7 +330,7 @@ class Cell:
             "right": right_border,
             "up": up_border,
             "down": down_border,
-            }
+        }
         crossed_all_borders = False
         # Scan from the back to the front of suid.
         for i in reversed(list(range(len(suid)))):
@@ -327,26 +351,26 @@ class Cell:
         self0 = suid[0]
         neighbour0 = neighbour_suid[0]
         if (
-                (self0 == zero_cells[5] and neighbour0 == an[self0]["left"])
-                or (self0 == an[zero_cells[5]]["right"] and neighbour0 == zero_cells[5])
-                or (self0 == zero_cells[0] and neighbour0 == an[self0]["right"])
-                or (self0 == an[zero_cells[0]]["left"] and neighbour0 == zero_cells[0])
+            (self0 == zero_cells[5] and neighbour0 == an[self0]["left"])
+            or (self0 == an[zero_cells[5]]["right"] and neighbour0 == zero_cells[5])
+            or (self0 == zero_cells[0] and neighbour0 == an[self0]["right"])
+            or (self0 == an[zero_cells[0]]["left"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(1)
             neighbour = self.rotate(neighbour_suid, 1)
         elif (
-                (self0 == zero_cells[5] and neighbour0 == an[self0]["down"])
-                or (self0 == an[zero_cells[5]]["down"] and neighbour0 == zero_cells[5])
-                or (self0 == zero_cells[0] and neighbour0 == an[self0]["up"])
-                or (self0 == an[zero_cells[0]]["up"] and neighbour0 == zero_cells[0])
+            (self0 == zero_cells[5] and neighbour0 == an[self0]["down"])
+            or (self0 == an[zero_cells[5]]["down"] and neighbour0 == zero_cells[5])
+            or (self0 == zero_cells[0] and neighbour0 == an[self0]["up"])
+            or (self0 == an[zero_cells[0]]["up"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(2)
             neighbour = self.rotate(neighbour_suid, 2)
         elif (
-                (self0 == zero_cells[5] and neighbour0 == an[self0]["right"])
-                or (self0 == an[zero_cells[5]]["left"] and neighbour0 == zero_cells[5])
-                or (self0 == zero_cells[0] and neighbour0 == an[self0]["left"])
-                or (self0 == an[zero_cells[0]]["right"] and neighbour0 == zero_cells[0])
+            (self0 == zero_cells[5] and neighbour0 == an[self0]["right"])
+            or (self0 == an[zero_cells[5]]["left"] and neighbour0 == zero_cells[5])
+            or (self0 == zero_cells[0] and neighbour0 == an[self0]["left"])
+            or (self0 == an[zero_cells[0]]["right"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(3)
             neighbour = self.rotate(neighbour_suid, 3)
