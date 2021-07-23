@@ -50,7 +50,7 @@ class CellNeighbours(unittest.TestCase):
     def test_neighbours(self):
         self.assertEqual(
             Cell('R4').neighbours().cell_suids,
-            CellCollection(['R1', 'R3', 'R5', 'R7']).cell_suids)
+            CellCollection(['R0', 'R1', 'R2', 'R3', 'R5', 'R6', 'R7', 'R8']).cell_suids)
 
 
 class CellCollectionInstantiation(unittest.TestCase):

@@ -31,6 +31,8 @@ class CellCollection:
         self.order()
         # regenerate the cells as they may have changed during compression through to ordering
         self.cells = [Cell(suid) for suid in self.cell_suids]
+        self.max_resolution = max([cell.resolution for cell in self.cells])
+        self.min_resolution = min([cell.resolution for cell in self.cells])
 
     def __repr__(self):
         return ' '.join(self.cell_suids)
@@ -39,9 +41,28 @@ class CellCollection:
         new_suids = list(set(self.cell_suids).union(set(other.cell_suids)))
         return CellCollection(new_suids)
 
-    def __sub__(self, other):
-        new_suids = list(set(self.cell_suids).difference(set(other.cell_suids)))
+    # def __sub__(self, other):
+    #     cells_to_expand = []
+    #     for cell_one in self.cells:
+    #         for cell_two in other:
+    #             for i, j in zip(cell_one.suid, cell_two.suid):
+    #                 if i!=j:
+    #                     break
+    #             if cell_one.resolution == cell_two.resolution:
+    #
+    #
+    #     new_suids = list(set(self.cell_suids).difference(set(other.cell_suids)))
         # check for overlap of new suids with any of this CellCollection
+
+    def __len__(self):
+        return len(self.cell_suids)
+
+    def area(self):
+        """
+        Returns the area of a CellCollection
+        :return: area in m2 for a CellCollection
+        """
+        return sum([cell.area for cell in self.cells])
 
     def validate(self):
         # input can be:
@@ -143,6 +164,7 @@ class Cell:
         elif isinstance(suid, tuple):
             self.suid = suid
         self.validate()
+        self.resolution = len(self.suid)-1
 
     def __repr__(self):
         return ''.join([str(i) for i in self.suid])
@@ -254,12 +276,20 @@ class Cell:
         # for i in range(N - 1, N ** 2, N):
         #     an[i]["right"] = an[i]["right"] - N
 
-    def neighbours(self, include_diagonals=False):
-        if include_diagonals:
-            raise NotImplementedError('Not yet implemented')
+    def neighbours(self, include_diagonals=True):
+        """
+        Returns the neighbouring cells of a given cell
+        :param include_diagonals: Includes cells that are diagonal neighbours
+        :return: a CellCollection of neighbouring cells
+        """
         neighbours = []
         for direction in ("up", "down", "left", "right"):
             neighbours.append(self.neighbour(direction))
+        if include_diagonals:
+            neighbours.append(self.neighbour('up').neighbour('left'))
+            neighbours.append(self.neighbour('up').neighbour('right'))
+            neighbours.append(self.neighbour('down').neighbour('left'))
+            neighbours.append(self.neighbour('down').neighbour('right'))
         return CellCollection(neighbours)
 
     def neighbour(self, direction):
