@@ -1,7 +1,17 @@
-from itertools import product
+from __future__ import annotations
+from itertools import product, chain
+from typing import Union
 
 zero_cells = ["N", "O", "P", "Q", "R", "S"]
 N_crs = {"auspix": 3}
+
+
+class EmptyCellCollection:
+    def __init__(self):
+        self.cells = []
+
+    def __add__(self, other):
+        return other
 
 
 class CellCollection:
@@ -41,18 +51,28 @@ class CellCollection:
         new_suids = list(set(self.cell_suids).union(set(other.cell_suids)))
         return CellCollection(new_suids)
 
-    # def __sub__(self, other):
-    #     cells_to_expand = []
-    #     for cell_one in self.cells:
-    #         for cell_two in other:
-    #             for i, j in zip(cell_one.suid, cell_two.suid):
-    #                 if i!=j:
-    #                     break
-    #             if cell_one.resolution == cell_two.resolution:
-    #
-    #
-    #     new_suids = list(set(self.cell_suids).difference(set(other.cell_suids)))
-    # check for overlap of new suids with any of this CellCollection
+    def __sub__(self, other: Union[Cell, CellCollection]):
+
+        global cells_to_retain, cells_to_remove
+        cells_to_retain, cells_to_remove = [], []
+
+        def progressively_intersect(cells_one, cells_two):
+            for cell_one in cells_one:
+                for cell_two in cells_two:
+                    if cell_one.overlaps(cell_two):
+                        if cell_one.resolution >= cell_two.resolution:
+                            cells_to_remove.append(cell_one.suid)
+                        elif cell_one.resolution < cell_two.resolution:
+                            children = cell_one.children()
+                            progressively_intersect(children, [cell_two])
+                    else:
+                        cells_to_retain.append(cell_one.suid)
+
+        if isinstance(other, Cell):
+            other = CellCollection(other)
+        progressively_intersect(self.cells, other.cells)
+        overall = list(set(cells_to_retain) - set(cells_to_remove))
+        return CellCollection([Cell(cell) for cell in overall])
 
     def __len__(self):
         return len(self.cell_suids)
@@ -63,6 +83,34 @@ class CellCollection:
         :return: area in m2 for a CellCollection
         """
         return sum([cell.area for cell in self.cells])
+
+    def neighbours(self, resolution=None):
+        """
+        The cells immediately around a CellCollection, at a given resolution. Defaults to the maximum resolution of the
+        CellCollection.
+        :return: A CellCollection
+        """
+        if not resolution:
+            resolution = self.max_resolution
+        elif resolution < self.max_resolution:
+            raise ValueError("Resolution must be at or greater than the CellCollection's max resolution in order to "
+                             "provide a sensible set of neighbouring cells")
+        all_neighbours = EmptyCellCollection()
+        for cell in self.cells:
+            if cell.resolution > resolution:
+                all_neighbours += cell.children(resolution).neighbours()
+            else:
+                all_neighbours += cell.neighbours()
+        # return only the neighbours around edges (i.e. we're not interested in neighbours of interior cells that are
+        # themselves cells of the CellCollection
+        return all_neighbours - self
+
+    # def border(self, resolution=None):
+    # implement as neighbours of neighbours that overlap with the geometry
+    #     if not resolution:
+    #         resolution = self.max_resolution
+
+
 
     def validate(self):
         # input can be:
@@ -75,7 +123,7 @@ class CellCollection:
         if not isinstance(self.cells, (str, list, Cell)):
             raise ValueError(
                 "Input must be a string representing a cell suid, Cell, or lists of these."
-            )
+                )
         # all cells must have the same CRS
         if isinstance(self.cells, str):
             self.cells = [Cell(self.cells)]
@@ -84,8 +132,8 @@ class CellCollection:
         # at this point instances representing a single Cell have been coerced to a list with a Cell
         # convert lists of strings to lists of Cells
         assert isinstance(self.cells, list)
-        if len(self.cells) == 0:
-            raise ValueError("Cell Collections cannot be empty.")
+        # if len(self.cells) == 0:
+        #     raise ValueError("Cell Collections cannot be empty.")
         if isinstance(self.cells[0], str):
             self.cells = [Cell(cell_str) for cell_str in self.cells]
         # finally check we have a list of Cell objects with consistent CRSs
@@ -101,7 +149,7 @@ class CellCollection:
         # e.g. P1 P12 is equivalent to P1, so remove P12 if present
         for suid in self.cell_suids:
             for i in range(len(suid) - 1):
-                ancestor = suid[0 : i + 1]
+                ancestor = suid[0: i + 1]
                 if ancestor in self.cell_suids:
                     self.cell_suids = list(set(self.cell_suids) - set([suid]))
 
@@ -141,7 +189,7 @@ class CellCollection:
         nums = [
             str(zero_cells.index(x[0])) + "".join([str(i) for i in x[1:]])
             for x in self.cell_suids
-        ]
+            ]
         # sort numerical Cell IDs as per integers
         s = sorted(nums, key=int)
         # convert first character back to a letter
@@ -220,8 +268,8 @@ class Cell:
                 6: {"left": 8, "right": 7, "up": 3, "down": 0},
                 7: {"left": 6, "right": 8, "up": 4, "down": 1},
                 8: {"left": 7, "right": 6, "up": 5, "down": 2},
+                }
             }
-        }
         return n3_atomic_neighbours[N_crs[self.crs]]
 
         # north_square = south_square = 0
@@ -300,7 +348,7 @@ class Cell:
         # for i in range(N - 1, N ** 2, N):
         #     an[i]["right"] = an[i]["right"] - N
 
-    def neighbours(self, include_diagonals=True):
+    def neighbours(self, include_diagonals=True) -> CellCollection:
         """
         Returns the neighbouring cells of a given cell
         :param include_diagonals: Includes cells that are diagonal neighbours
@@ -330,7 +378,7 @@ class Cell:
             "right": right_border,
             "up": up_border,
             "down": down_border,
-        }
+            }
         crossed_all_borders = False
         # Scan from the back to the front of suid.
         for i in reversed(list(range(len(suid)))):
@@ -351,26 +399,26 @@ class Cell:
         self0 = suid[0]
         neighbour0 = neighbour_suid[0]
         if (
-            (self0 == zero_cells[5] and neighbour0 == an[self0]["left"])
-            or (self0 == an[zero_cells[5]]["right"] and neighbour0 == zero_cells[5])
-            or (self0 == zero_cells[0] and neighbour0 == an[self0]["right"])
-            or (self0 == an[zero_cells[0]]["left"] and neighbour0 == zero_cells[0])
+                (self0 == zero_cells[5] and neighbour0 == an[self0]["left"])
+                or (self0 == an[zero_cells[5]]["right"] and neighbour0 == zero_cells[5])
+                or (self0 == zero_cells[0] and neighbour0 == an[self0]["right"])
+                or (self0 == an[zero_cells[0]]["left"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(1)
             neighbour = self.rotate(neighbour_suid, 1)
         elif (
-            (self0 == zero_cells[5] and neighbour0 == an[self0]["down"])
-            or (self0 == an[zero_cells[5]]["down"] and neighbour0 == zero_cells[5])
-            or (self0 == zero_cells[0] and neighbour0 == an[self0]["up"])
-            or (self0 == an[zero_cells[0]]["up"] and neighbour0 == zero_cells[0])
+                (self0 == zero_cells[5] and neighbour0 == an[self0]["down"])
+                or (self0 == an[zero_cells[5]]["down"] and neighbour0 == zero_cells[5])
+                or (self0 == zero_cells[0] and neighbour0 == an[self0]["up"])
+                or (self0 == an[zero_cells[0]]["up"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(2)
             neighbour = self.rotate(neighbour_suid, 2)
         elif (
-            (self0 == zero_cells[5] and neighbour0 == an[self0]["right"])
-            or (self0 == an[zero_cells[5]]["left"] and neighbour0 == zero_cells[5])
-            or (self0 == zero_cells[0] and neighbour0 == an[self0]["left"])
-            or (self0 == an[zero_cells[0]]["right"] and neighbour0 == zero_cells[0])
+                (self0 == zero_cells[5] and neighbour0 == an[self0]["right"])
+                or (self0 == an[zero_cells[5]]["left"] and neighbour0 == zero_cells[5])
+                or (self0 == zero_cells[0] and neighbour0 == an[self0]["left"])
+                or (self0 == an[zero_cells[0]]["right"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(3)
             neighbour = self.rotate(neighbour_suid, 3)
@@ -449,3 +497,45 @@ class Cell:
             child_order[(row, col)] = order
             child_order[order] = (row, col)
         return child_order
+
+    def border(self, resolution=None) -> Union[Cell, CellCollection]:
+        """
+        The set of cells that form the border of this cell, at a resolution at or higher than the cell's resolution.
+        NB a cells border *at* it's resolution *is* that cell
+        :return: Cell (for a border at the Cell's resolution) or CellCollection otherwise
+        """
+        if resolution == None:
+            return self
+        else:
+            resolution_delta = resolution - self.resolution
+            left_edge = product([0, 3, 6], repeat=resolution_delta)
+            right_edge = product([2, 5, 8], repeat=resolution_delta)
+            top_edge = product([0, 1, 2], repeat=resolution_delta)
+            bottom_edge = product([6, 7, 8], repeat=resolution_delta)
+            all_edges = list(set(chain.from_iterable(zip(left_edge, right_edge, top_edge, bottom_edge))))
+        zero_cell = self.suid[0]
+        all_cells = CellCollection([zero_cell + ''.join([str(j) for j in i]) for i in all_edges])
+        return all_cells
+
+    def children(self, resolution: int = None) -> list:
+        if not resolution:
+            resolution_delta = 1
+        else:
+            resolution_delta = resolution - self.resolution
+        children_tuples = [self.suid + i for i in product([0, 1, 2, 3, 4, 5, 6, 7, 8],
+                                                                 repeat=resolution_delta)]
+        children_cells_list = [Cell(cell_tuple) for cell_tuple in children_tuples]
+        return children_cells_list
+            # children_cell_strings = ([self.__str__() + i for i in ['0', '1', '2', '3', '4', '5', '6', '7', '8']])
+            # return [Cell(cell_string) for cell_string in children_cell_strings]
+
+        # NB if converted to a "CellCollection", the children will automatically be compressed back to the parent cell!
+
+
+    def overlaps(self, other: Union[str, Cell]) -> bool:
+        if isinstance(other, str):
+            other = Cell(other)
+        for i, j in zip(self.suid, other.suid):
+            if i != j:
+                return False
+        return True

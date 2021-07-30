@@ -1,5 +1,5 @@
 """
-This Python 3.3 code tests the ``processing.processing`` module.
+This Python 3.3 code tests the ``sources.dggs_functions`` module.
 Beware, these tests cover only some functions and only some scenarios.
 Keep adding tests!
 CHANGELOG:
