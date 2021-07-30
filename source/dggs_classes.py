@@ -93,8 +93,10 @@ class CellCollection:
         if not resolution:
             resolution = self.max_resolution
         elif resolution < self.max_resolution:
-            raise ValueError("Resolution must be at or greater than the CellCollection's max resolution in order to "
-                             "provide a sensible set of neighbouring cells")
+            raise ValueError(
+                "Resolution must be at or greater than the CellCollection's max resolution in order to "
+                "provide a sensible set of neighbouring cells"
+            )
         all_neighbours = EmptyCellCollection()
         for cell in self.cells:
             if cell.resolution > resolution:
@@ -110,8 +112,6 @@ class CellCollection:
     #     if not resolution:
     #         resolution = self.max_resolution
 
-
-
     def validate(self):
         # input can be:
         # - a string (for the suid of a single cell)
@@ -123,7 +123,7 @@ class CellCollection:
         if not isinstance(self.cells, (str, list, Cell)):
             raise ValueError(
                 "Input must be a string representing a cell suid, Cell, or lists of these."
-                )
+            )
         # all cells must have the same CRS
         if isinstance(self.cells, str):
             self.cells = [Cell(self.cells)]
@@ -149,7 +149,7 @@ class CellCollection:
         # e.g. P1 P12 is equivalent to P1, so remove P12 if present
         for suid in self.cell_suids:
             for i in range(len(suid) - 1):
-                ancestor = suid[0: i + 1]
+                ancestor = suid[0 : i + 1]
                 if ancestor in self.cell_suids:
                     self.cell_suids = list(set(self.cell_suids) - set([suid]))
 
@@ -189,7 +189,7 @@ class CellCollection:
         nums = [
             str(zero_cells.index(x[0])) + "".join([str(i) for i in x[1:]])
             for x in self.cell_suids
-            ]
+        ]
         # sort numerical Cell IDs as per integers
         s = sorted(nums, key=int)
         # convert first character back to a letter
@@ -268,8 +268,8 @@ class Cell:
                 6: {"left": 8, "right": 7, "up": 3, "down": 0},
                 7: {"left": 6, "right": 8, "up": 4, "down": 1},
                 8: {"left": 7, "right": 6, "up": 5, "down": 2},
-                }
             }
+        }
         return n3_atomic_neighbours[N_crs[self.crs]]
 
         # north_square = south_square = 0
@@ -378,7 +378,7 @@ class Cell:
             "right": right_border,
             "up": up_border,
             "down": down_border,
-            }
+        }
         crossed_all_borders = False
         # Scan from the back to the front of suid.
         for i in reversed(list(range(len(suid)))):
@@ -399,26 +399,26 @@ class Cell:
         self0 = suid[0]
         neighbour0 = neighbour_suid[0]
         if (
-                (self0 == zero_cells[5] and neighbour0 == an[self0]["left"])
-                or (self0 == an[zero_cells[5]]["right"] and neighbour0 == zero_cells[5])
-                or (self0 == zero_cells[0] and neighbour0 == an[self0]["right"])
-                or (self0 == an[zero_cells[0]]["left"] and neighbour0 == zero_cells[0])
+            (self0 == zero_cells[5] and neighbour0 == an[self0]["left"])
+            or (self0 == an[zero_cells[5]]["right"] and neighbour0 == zero_cells[5])
+            or (self0 == zero_cells[0] and neighbour0 == an[self0]["right"])
+            or (self0 == an[zero_cells[0]]["left"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(1)
             neighbour = self.rotate(neighbour_suid, 1)
         elif (
-                (self0 == zero_cells[5] and neighbour0 == an[self0]["down"])
-                or (self0 == an[zero_cells[5]]["down"] and neighbour0 == zero_cells[5])
-                or (self0 == zero_cells[0] and neighbour0 == an[self0]["up"])
-                or (self0 == an[zero_cells[0]]["up"] and neighbour0 == zero_cells[0])
+            (self0 == zero_cells[5] and neighbour0 == an[self0]["down"])
+            or (self0 == an[zero_cells[5]]["down"] and neighbour0 == zero_cells[5])
+            or (self0 == zero_cells[0] and neighbour0 == an[self0]["up"])
+            or (self0 == an[zero_cells[0]]["up"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(2)
             neighbour = self.rotate(neighbour_suid, 2)
         elif (
-                (self0 == zero_cells[5] and neighbour0 == an[self0]["right"])
-                or (self0 == an[zero_cells[5]]["left"] and neighbour0 == zero_cells[5])
-                or (self0 == zero_cells[0] and neighbour0 == an[self0]["left"])
-                or (self0 == an[zero_cells[0]]["right"] and neighbour0 == zero_cells[0])
+            (self0 == zero_cells[5] and neighbour0 == an[self0]["right"])
+            or (self0 == an[zero_cells[5]]["left"] and neighbour0 == zero_cells[5])
+            or (self0 == zero_cells[0] and neighbour0 == an[self0]["left"])
+            or (self0 == an[zero_cells[0]]["right"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(3)
             neighbour = self.rotate(neighbour_suid, 3)
@@ -512,25 +512,31 @@ class Cell:
             right_edge = product([2, 5, 8], repeat=resolution_delta)
             top_edge = product([0, 1, 2], repeat=resolution_delta)
             bottom_edge = product([6, 7, 8], repeat=resolution_delta)
-            all_edges = list(set(chain.from_iterable(zip(left_edge, right_edge, top_edge, bottom_edge))))
+            all_edges = list(
+                set(
+                    chain.from_iterable(
+                        zip(left_edge, right_edge, top_edge, bottom_edge)
+                    )
+                )
+            )
         zero_cell = self.suid[0]
-        all_cells = CellCollection([zero_cell + ''.join([str(j) for j in i]) for i in all_edges])
+        all_cells = CellCollection(
+            [zero_cell + "".join([str(j) for j in i]) for i in all_edges]
+        )
         return all_cells
 
     def children(self, resolution: int = None) -> list:
+        # NB if converted to a "CellCollection", the children will automatically be compressed back to the parent cell!
         if not resolution:
             resolution_delta = 1
         else:
             resolution_delta = resolution - self.resolution
-        children_tuples = [self.suid + i for i in product([0, 1, 2, 3, 4, 5, 6, 7, 8],
-                                                                 repeat=resolution_delta)]
+        children_tuples = [
+            self.suid + i
+            for i in product([0, 1, 2, 3, 4, 5, 6, 7, 8], repeat=resolution_delta)
+        ]
         children_cells_list = [Cell(cell_tuple) for cell_tuple in children_tuples]
         return children_cells_list
-            # children_cell_strings = ([self.__str__() + i for i in ['0', '1', '2', '3', '4', '5', '6', '7', '8']])
-            # return [Cell(cell_string) for cell_string in children_cell_strings]
-
-        # NB if converted to a "CellCollection", the children will automatically be compressed back to the parent cell!
-
 
     def overlaps(self, other: Union[str, Cell]) -> bool:
         if isinstance(other, str):
