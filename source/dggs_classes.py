@@ -132,8 +132,8 @@ class CellCollection:
         # at this point instances representing a single Cell have been coerced to a list with a Cell
         # convert lists of strings to lists of Cells
         assert isinstance(self.cells, list)
-        # if len(self.cells) == 0:
-        #     raise ValueError("Cell Collections cannot be empty.")
+        if len(self.cells) == 0:
+            raise ValueError("Cell Collections cannot be empty.")
         if isinstance(self.cells[0], str):
             self.cells = [Cell(cell_str) for cell_str in self.cells]
         # finally check we have a list of Cell objects with consistent CRSs
