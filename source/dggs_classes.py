@@ -6,14 +6,6 @@ zero_cells = ["N", "O", "P", "Q", "R", "S"]
 N_crs = {"auspix": 3}
 
 
-class EmptyCellCollection:
-    def __init__(self):
-        self.cells = []
-
-    def __add__(self, other):
-        return other
-
-
 class CellCollection:
     """
     DGGS Cell Collection class.
@@ -25,30 +17,60 @@ class CellCollection:
         - ordering (alphabetical and numerical based on suids)
     """
 
-    def __init__(self, cells):
+    def __init__(self, cells=None, crs=None, kind=None):
         """
         :param cells: a list of Cell objects
         """
         self.cells = cells
-        self.validate()
-        self.crs = self.cells[0].crs
-        self.kind = self.cells[0].kind
-        self.cell_suids = [cell.suid for cell in self.cells]
-        # standardise the cells
-        self.compress()
-        self.deduplicate()
-        self.absorb()
-        self.order()
-        # regenerate the cells as they may have changed during compression through to ordering
-        self.cells = [Cell(suid) for suid in self.cell_suids]
-        self.max_resolution = max([cell.resolution for cell in self.cells])
-        self.min_resolution = min([cell.resolution for cell in self.cells])
-        self.asWKT = self.wkt()
+        if not self.empty():
+
+            # standardise input and set up basic attributes
+            self.standardise_input()
+            self.crs = crs if crs else self.cells[0].crs
+            self.kind = kind if kind else self.cells[0].kind
+            self.cell_suids = [cell.suid for cell in self.cells]
+            self.validate()
+
+            # standardise the cells
+            self.compress()
+            self.deduplicate()
+            self.absorb()
+            self.order()
+
+            # regenerate the cells as they may have changed during compression through to ordering
+            self.cells = [Cell(suid) for suid in self.cell_suids]
+
+            # set additional attributes
+            self.max_resolution = max([cell.resolution for cell in self.cells])
+            self.min_resolution = min([cell.resolution for cell in self.cells])
+            self.wkt = self.wkt()
+
+    def empty(self):
+        """
+        An empty CellCollection - used mostly as a placeholder for other methods. E.g. the result of subtracting a cell
+         from itself will result in an empty cell
+        :return: boolean as to whether the CellCollection is empty, and if it is, sets most attributes to 'None'
+        """
+        if not self.cells:
+            self.crs = self.kind = self.max_resolution = self.min_resolution = self.wkt = None
+            self.cell_suids = []
+            return True
+        return False
 
     def __repr__(self):
-        return " ".join(self.cell_suids)
+        if self.cell_suids:
+            return " ".join(self.cell_suids)
+        else:
+            return "Empty CellCollection"
 
     def __add__(self, other):
+        self._matches(other)
+        if isinstance(other, Cell):
+            other = CellCollection(other)
+        if not isinstance(other, CellCollection):
+            raise ValueError(
+                f"Only a Cell or CellCollection can be added to a CellCollection. Object of type {other.type} was passed."
+                )
         new_suids = list(set(self.cell_suids).union(set(other.cell_suids)))
         return CellCollection(new_suids)
 
@@ -104,8 +126,8 @@ class CellCollection:
             raise ValueError(
                 "Resolution must be at or greater than the CellCollection's max resolution in order to "
                 "provide a sensible set of neighbouring cells"
-            )
-        all_neighbours = EmptyCellCollection()
+                )
+        all_neighbours = CellCollection()
         for cell in self.cells:
             if cell.resolution > resolution:
                 all_neighbours += cell.children(resolution).neighbours()
@@ -120,7 +142,7 @@ class CellCollection:
     #     if not resolution:
     #         resolution = self.max_resolution
 
-    def validate(self):
+    def standardise_input(self):
         # input can be:
         # - a string (for the suid of a single cell)
         # - a list of strings (for suids representing multiple cells)
@@ -129,9 +151,9 @@ class CellCollection:
         # the first three types of input are coerced to a list of Cell objects
 
         if not isinstance(self.cells, (str, list, Cell)):
-            raise ValueError(
-                "Input must be a string representing a cell suid, Cell, or lists of these."
-            )
+            raise TypeError(
+                "Input must be of type string, list, or Cell."
+                )
         # all cells must have the same CRS
         if isinstance(self.cells, str):
             self.cells = [Cell(self.cells)]
@@ -144,9 +166,16 @@ class CellCollection:
             raise ValueError("Cell Collections cannot be empty.")
         if isinstance(self.cells[0], str):
             self.cells = [Cell(cell_str) for cell_str in self.cells]
-        # finally check we have a list of Cell objects with consistent CRSs
+
+    def validate(self):
+        # check we have a list of Cell objects with consistent CRSs and kinds
         for cell in self.cells:
-            assert isinstance(cell, Cell)
+            if not isinstance(cell, Cell):
+                raise TypeError("Cells must be of type Cell")
+            if not cell.crs == self.crs:
+                raise ValueError("All CRS's in a CellCollection must be the same")
+            if not cell.kind == self.kind:
+                raise ValueError("All kinds in a CellCollection must be the same")
 
     def deduplicate(self):
         # remove repeated instances of the same cell
@@ -157,7 +186,7 @@ class CellCollection:
         # e.g. P1 P12 is equivalent to P1, so remove P12 if present
         for suid in self.cell_suids:
             for i in range(len(suid) - 1):
-                ancestor = suid[0 : i + 1]
+                ancestor = suid[0: i + 1]
                 if ancestor in self.cell_suids:
                     self.cell_suids = list(set(self.cell_suids) - set([suid]))
 
@@ -197,11 +226,26 @@ class CellCollection:
         nums = [
             str(zero_cells.index(x[0])) + "".join([str(i) for i in x[1:]])
             for x in self.cell_suids
-        ]
+            ]
         # sort numerical Cell IDs as per integers
         s = sorted(nums, key=int)
         # convert first character back to a letter
         self.cell_suids = [zero_cells[int(x[0])] + x[1:] for x in s]
+
+    def _matches(self, other):
+        """
+        Verifies that two CellCollections have the same kind and crs.
+        Operations between two CellCollections (add, subtract, sf functions) require that the two CellCollections are
+        of the same kind and crs.
+        :return: boolean
+        """
+        if (not (self.crs and self.kind)) or (not (other.crs and other.kind)):  # then one of the collections is empty
+            pass
+        elif self.crs == other.crs and self.kind == other.kind:
+            pass
+        else:
+            raise ValueError("The CellCollections must have matching CRS's and kinds in order to perform operations"
+                             "between them, or, one of the CellCollections must be empty.")
 
 
 class Cell:
@@ -220,7 +264,7 @@ class Cell:
         if not isinstance(suid, (str, tuple)):
             raise ValueError(
                 "A Cell can only be instantiated from a string or tuple representing a valid cell suid."
-            )
+                )
         self.crs = crs
         self.kind = kind
         self.N = N_crs[crs]
@@ -230,27 +274,17 @@ class Cell:
             self.suid = suid
         self.validate()
         self.resolution = len(self.suid) - 1
-        self.asWKT = self.wkt()
+        self.wkt = self.wkt()
 
     def __repr__(self):
         return "".join([str(i) for i in self.suid])
 
     def __add__(self, other: Union[Cell, CellCollection]):
-        if isinstance(other, Cell):
-            other = CellCollection(other)
-        if not isinstance(other, CellCollection):
-            raise ValueError(
-                f"Only a Cell or CellCollection can be added to a Cell. Object of type {other.type} was passed."
-            )
+        other = self._validate_other(other)
         return CellCollection(self) + other
 
     def __sub__(self, other: Union[Cell, CellCollection]):
-        if isinstance(other, Cell):
-            other = CellCollection(other)
-        if not isinstance(other, CellCollection):
-            raise ValueError(
-                f"Only a Cell or CellCollection can be subtracted from a Cell. Object of type {other.type} was passed."
-            )
+        other = self._validate_other(other)
         return CellCollection(self) - other
 
     def __len__(self):
@@ -271,8 +305,8 @@ class Cell:
             for i in suid_str[1:]:
                 if not int(i) in range(self.N ** 2):
                     raise ValueError(
-                        f"Suid identifier digits must be in the range 0:{self.N**2}"
-                    )
+                        f"Suid identifier digits must be in the range 0:{self.N ** 2}"
+                        )
         return tuple([suid_str[0]] + [int(i) for i in suid_str[1:]])
 
     def validate(self):
@@ -289,8 +323,8 @@ class Cell:
             for digit in self.suid[1:]:
                 if digit not in range(self.N ** 2):
                     raise ValueError(
-                        f"The suid provided has digits not in the valid range for this DGGS (0:{self.N**2})"
-                    )
+                        f"The suid provided has digits not in the valid range for this DGGS (0:{self.N ** 2})"
+                        )
 
     def atomic_neighbours(self):
         # atomic neighbours created from rhealpix
@@ -312,8 +346,8 @@ class Cell:
                 6: {"left": 8, "right": 7, "up": 3, "down": 0},
                 7: {"left": 6, "right": 8, "up": 4, "down": 1},
                 8: {"left": 7, "right": 6, "up": 5, "down": 2},
+                }
             }
-        }
         return n3_atomic_neighbours[N_crs[self.crs]]
 
         # north_square = south_square = 0
@@ -422,7 +456,7 @@ class Cell:
             "right": right_border,
             "up": up_border,
             "down": down_border,
-        }
+            }
         crossed_all_borders = False
         # Scan from the back to the front of suid.
         for i in reversed(list(range(len(suid)))):
@@ -443,26 +477,26 @@ class Cell:
         self0 = suid[0]
         neighbour0 = neighbour_suid[0]
         if (
-            (self0 == zero_cells[5] and neighbour0 == an[self0]["left"])
-            or (self0 == an[zero_cells[5]]["right"] and neighbour0 == zero_cells[5])
-            or (self0 == zero_cells[0] and neighbour0 == an[self0]["right"])
-            or (self0 == an[zero_cells[0]]["left"] and neighbour0 == zero_cells[0])
+                (self0 == zero_cells[5] and neighbour0 == an[self0]["left"])
+                or (self0 == an[zero_cells[5]]["right"] and neighbour0 == zero_cells[5])
+                or (self0 == zero_cells[0] and neighbour0 == an[self0]["right"])
+                or (self0 == an[zero_cells[0]]["left"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(1)
             neighbour = self.rotate(neighbour_suid, 1)
         elif (
-            (self0 == zero_cells[5] and neighbour0 == an[self0]["down"])
-            or (self0 == an[zero_cells[5]]["down"] and neighbour0 == zero_cells[5])
-            or (self0 == zero_cells[0] and neighbour0 == an[self0]["up"])
-            or (self0 == an[zero_cells[0]]["up"] and neighbour0 == zero_cells[0])
+                (self0 == zero_cells[5] and neighbour0 == an[self0]["down"])
+                or (self0 == an[zero_cells[5]]["down"] and neighbour0 == zero_cells[5])
+                or (self0 == zero_cells[0] and neighbour0 == an[self0]["up"])
+                or (self0 == an[zero_cells[0]]["up"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(2)
             neighbour = self.rotate(neighbour_suid, 2)
         elif (
-            (self0 == zero_cells[5] and neighbour0 == an[self0]["right"])
-            or (self0 == an[zero_cells[5]]["left"] and neighbour0 == zero_cells[5])
-            or (self0 == zero_cells[0] and neighbour0 == an[self0]["left"])
-            or (self0 == an[zero_cells[0]]["right"] and neighbour0 == zero_cells[0])
+                (self0 == zero_cells[5] and neighbour0 == an[self0]["right"])
+                or (self0 == an[zero_cells[5]]["left"] and neighbour0 == zero_cells[5])
+                or (self0 == zero_cells[0] and neighbour0 == an[self0]["left"])
+                or (self0 == an[zero_cells[0]]["right"] and neighbour0 == zero_cells[0])
         ):
             # neighbour = neighbour.rotate(3)
             neighbour = self.rotate(neighbour_suid, 3)
@@ -560,13 +594,13 @@ class Cell:
                 set(
                     chain.from_iterable(
                         zip(left_edge, right_edge, top_edge, bottom_edge)
+                        )
                     )
                 )
-            )
         zero_cell = self.suid[0]
         all_cells = CellCollection(
             [zero_cell + "".join([str(j) for j in i]) for i in all_edges]
-        )
+            )
         return all_cells
 
     def children(self, resolution: int = None) -> list:
@@ -578,7 +612,7 @@ class Cell:
         children_tuples = [
             self.suid + i
             for i in product([0, 1, 2, 3, 4, 5, 6, 7, 8], repeat=resolution_delta)
-        ]
+            ]
         children_cells_list = [Cell(cell_tuple) for cell_tuple in children_tuples]
         return children_cells_list
 
@@ -589,3 +623,17 @@ class Cell:
             if i != j:
                 return False
         return True
+
+    def _validate_other(self, other):
+        """
+        Validates the "other" object in Cell-Cell or Cell-CellCollection operations e.g. addition and subtraction
+        :return:
+        """
+        if isinstance(other, Cell):
+            other = CellCollection(other)
+        if not isinstance(other, CellCollection):
+            raise ValueError(
+                f"Only a Cell or CellCollection can have operations made against it from a Cell. "
+                f"Object of type {other.type} was passed."
+                )
+        return other

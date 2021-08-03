@@ -65,16 +65,6 @@ class CellSubtraction(unittest.TestCase):
         )
 
 
-class CellCollectionNeighbours(unittest.TestCase):
-    def test_collection_neighbours(self):
-        self.assertEqual(
-            CellCollection(["P4", "P5"]).neighbours().cell_suids,
-            CellCollection(
-                ["P0", "P1", "P2", "P3", "P6", "P7", "P8", "Q0", "Q3", "Q6"]
-            ).cell_suids,
-        )
-
-
 class CellBorder(unittest.TestCase):
     def test_border_no_resolution_specified(self):
         self.assertEqual(
@@ -130,6 +120,15 @@ class CellBorder(unittest.TestCase):
         )
 
 
+class CellCollectionNeighbours(unittest.TestCase):
+    def test_collection_neighbours(self):
+        self.assertEqual(
+            CellCollection(["P4", "P5"]).neighbours().cell_suids,
+            CellCollection(
+                ["P0", "P1", "P2", "P3", "P6", "P7", "P8", "Q0", "Q3", "Q6"]
+            ).cell_suids,
+        )
+
 class CellCollectionInstantiation(unittest.TestCase):
     def test_collection_creation(self):
         assert type(CellCollection(["R1", "R4", "R5"])) == CellCollection
@@ -159,11 +158,13 @@ class CellCollectionsOperations(unittest.TestCase):
             (CellCollection(["R1", "R2"]) - CellCollection(["R12"])).cell_suids
         ) == set(["R10", "R11", "R13", "R14", "R15", "R16", "R17", "R18", "R2"])
 
-    # def test_collection_cell_subtraction(self):
-    #     assert (CellCollection(["R1"]) - Cell(["R12"])).cell_suids == [
-    #         "R10", "R11", "R13", "R14", "R15", "R16", "R17", "R18"
-    #     ]
-    #
+    def test_collection_cell_subtraction(self):
+        assert (CellCollection(["R1"]) - Cell("R12")).cell_suids == [
+            "R10", "R11", "R13", "R14", "R15", "R16", "R17", "R18"
+        ]
+
+    def test_empty_result(self):
+        assert (CellCollection(["R1"]) - CellCollection("R1")).cell_suids == []
 
 
 class CellChildren(unittest.TestCase):
@@ -187,6 +188,23 @@ class CellOverlaps(unittest.TestCase):
 
     def test_overlaps_false(self):
         self.assertFalse(Cell("R2").overlaps(Cell("R12")))
+
+class CellCollectionMatches(unittest.TestCase):
+    def test_collection_matches(self):
+        self.assertTrue(
+            CellCollection(["P4"], crs='auspix', kind='rHEALPix').cell_suids ==
+            CellCollection(["P4"], crs='auspix', kind='rHEALPix').cell_suids
+        )
+
+    def test_collection_not_matches(self):
+        with self.assertRaises(ValueError):
+            CellCollection(["P4"], crs='auspix', kind='rHEALPix').cell_suids == \
+            CellCollection(["P4"], crs='blahblahblah', kind='rHEALPix').cell_suids
+
+    def test_collection_not_matches_(self):
+        self.assertTrue(
+            (CellCollection() + CellCollection(['R1'])).cell_suids == CellCollection(['R1']).cell_suids
+            )
 
 
 if __name__ == "__main__":
