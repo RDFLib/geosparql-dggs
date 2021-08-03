@@ -126,9 +126,25 @@ class DGGSsfRelationships:
             return True
         return False
 
-    # @classmethod
-    # def sfTouches(cls, cells_one: Union[str, list], cells_two: [str, list]):
-    #     SF = cls(cells_one, cells_two)
+    @classmethod
+    def sfTouches(cls, cells_one: Union[str, list], cells_two: [str, list]):
+        SF = cls(cells_one, cells_two)
+        if SF.coll_1.max_resolution > SF.coll_2.max_resolution:
+            max_resolution = SF.coll_1.max_resolution
+        else:
+            max_resolution = SF.coll_2.max_resolution
+        if len(SF.coll_1) < len(SF.coll_2):
+            smaller_collection_neighbours = SF.coll_1.neighbours(max_resolution)
+            larger_collection = cells_two
+        else:
+            smaller_collection_neighbours = SF.coll_2.neighbours(max_resolution)
+            larger_collection = cells_one
+        if cls.sfIntersects(
+            smaller_collection_neighbours.cell_suids, larger_collection
+        ):
+            return True
+        return False
+
     # could be implemented by shifting a geometry by one cell (of the lowest resolution of the cells making up that
     # collection) in each of north/south/east/west then seeing if THESE new shapes intersect the second geometry.
     # (Shift the smaller geometry for efficiency).
@@ -216,12 +232,12 @@ def region_region_intersection(region_one: list, region_two: list):
 #     return False
 
 
-def canonical_form(cells_one, cells_two):
-    # coerces strings and lists of strings to sets of strings, this is to:
-    # - remove duplication of cells
-    # - facilitate working with one type (set) rather than two or more (strings, tuples, lists etc.)
-    cells_one = [cells_one] if isinstance(cells_one, str) else cells_one
-    cells_two = [cells_two] if isinstance(cells_two, str) else cells_two
-    cells_one = [Cell(cell_str) for cell_str in cells_one]
-    cells_two = [Cell(cell_str) for cell_str in cells_two]
-    return cells_one, cells_two
+# def canonical_form(cells_one, cells_two):
+#     # coerces strings and lists of strings to sets of strings, this is to:
+#     # - remove duplication of cells
+#     # - facilitate working with one type (set) rather than two or more (strings, tuples, lists etc.)
+#     cells_one = [cells_one] if isinstance(cells_one, str) else cells_one
+#     cells_two = [cells_two] if isinstance(cells_two, str) else cells_two
+#     cells_one = [Cell(cell_str) for cell_str in cells_one]
+#     cells_two = [Cell(cell_str) for cell_str in cells_two]
+#     return cells_one, cells_two

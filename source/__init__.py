@@ -5,3 +5,4 @@ sfOverlaps = DGGSsfRelationships.sfOverlapsBool
 sfDisjoint = DGGSsfRelationships.sfDisjoint
 sfContains = DGGSsfRelationships.sfContains
 sfWithin = DGGSsfRelationships.sfWithin
+sfTouches = DGGSsfRelationships.sfTouches

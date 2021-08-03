@@ -76,6 +76,16 @@ class SFRelationships(unittest.TestCase):
     def test_sf_not_within_overlaps(self):
         self.assertFalse(sfWithin(["P1", "P2"], ["P2", "P3"]))
 
+    # touches
+    def test_sf_touches_true_basic(self):
+        self.assertTrue(sfTouches("P1", "P2"))
+
+    def test_sf_touches_true_diagonal(self):
+        self.assertTrue(sfTouches("P1", "P5"))
+
+    def test_sf_touches_false(self):
+        self.assertFalse(sfTouches("P1", "P7"))
+
 
 if __name__ == "__main__":
     unittest.main()

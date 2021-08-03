@@ -21,7 +21,7 @@ class CellCollection:
     Includes:
         - compression (where all children of a parent are present, replace with their parent)
         - deduplication (removal of repeated cells)
-        - absorb (where a child and its parent are present, remove the child)
+        - absorb (where a child and its parent are present, remove the child/children)
         - ordering (alphabetical and numerical based on suids)
     """
 
@@ -43,6 +43,7 @@ class CellCollection:
         self.cells = [Cell(suid) for suid in self.cell_suids]
         self.max_resolution = max([cell.resolution for cell in self.cells])
         self.min_resolution = min([cell.resolution for cell in self.cells])
+        self.asWKT = self.wkt()
 
     def __repr__(self):
         return " ".join(self.cell_suids)
@@ -75,7 +76,14 @@ class CellCollection:
         return CellCollection([Cell(cell) for cell in overall])
 
     def __len__(self):
+        """
+        Defined as the number of cells in the collection.
+        :return: The length of a cell collection
+        """
         return len(self.cell_suids)
+
+    def wkt(self):
+        return f"CELLLIST (({self.__str__()}))"
 
     def area(self):
         """
@@ -209,7 +217,10 @@ class Cell:
     """
 
     def __init__(self, suid, kind="rHEALPix", crs="auspix"):
-        assert isinstance(suid, (str, tuple))
+        if not isinstance(suid, (str, tuple)):
+            raise ValueError(
+                "A Cell can only be instantiated from a string or tuple representing a valid cell suid."
+            )
         self.crs = crs
         self.kind = kind
         self.N = N_crs[crs]
@@ -219,20 +230,49 @@ class Cell:
             self.suid = suid
         self.validate()
         self.resolution = len(self.suid) - 1
+        self.asWKT = self.wkt()
 
     def __repr__(self):
         return "".join([str(i) for i in self.suid])
+
+    def __add__(self, other: Union[Cell, CellCollection]):
+        if isinstance(other, Cell):
+            other = CellCollection(other)
+        if not isinstance(other, CellCollection):
+            raise ValueError(
+                f"Only a Cell or CellCollection can be added to a Cell. Object of type {other.type} was passed."
+            )
+        return CellCollection(self) + other
+
+    def __sub__(self, other: Union[Cell, CellCollection]):
+        if isinstance(other, Cell):
+            other = CellCollection(other)
+        if not isinstance(other, CellCollection):
+            raise ValueError(
+                f"Only a Cell or CellCollection can be subtracted from a Cell. Object of type {other.type} was passed."
+            )
+        return CellCollection(self) - other
+
+    def __len__(self):
+        return 1  # by definition!
+
+    def wkt(self):
+        return f"CELL ({self.__str__()})"
 
     def suid_from_str(self, suid_str):
         """
         Creates a cell tuple from a string
         """
-        # first character should be in the zero cells
-        assert suid_str[0] in zero_cells
-        # any remaining characters should be digits in the range 0..N^2
+        # # first character should be in the zero cells
+        # if not suid_str[0] in zero_cells:
+        #
+        # # any remaining characters should be digits in the range 0..N^2
         if len(suid_str) > 1:
             for i in suid_str[1:]:
-                assert int(i) in range(N_crs[self.crs] ** 2)
+                if not int(i) in range(self.N ** 2):
+                    raise ValueError(
+                        f"Suid identifier digits must be in the range 0:{self.N**2}"
+                    )
         return tuple([suid_str[0]] + [int(i) for i in suid_str[1:]])
 
     def validate(self):
@@ -243,10 +283,14 @@ class Cell:
         format_validator()
 
     def _rhealpix_validator(self):
-        assert self.suid[0] in zero_cells
+        if self.suid[0] not in zero_cells:
+            raise ValueError("The suid provided does not have a valid zero-cell")
         if len(self.suid) > 1:
             for digit in self.suid[1:]:
-                assert digit in range(9)
+                if digit not in range(self.N ** 2):
+                    raise ValueError(
+                        f"The suid provided has digits not in the valid range for this DGGS (0:{self.N**2})"
+                    )
 
     def atomic_neighbours(self):
         # atomic neighbours created from rhealpix

@@ -11,7 +11,7 @@ from source.dggs_classes import *
 
 class CellValid(unittest.TestCase):
     def test_dggs_geom_format_invalid_1(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             Cell("H123")
 
     def test_dggs_geom_format_invalid_2(self):
@@ -44,6 +44,24 @@ class CellNeighbours(unittest.TestCase):
         self.assertEqual(
             Cell("R4").neighbours().cell_suids,
             CellCollection(["R0", "R1", "R2", "R3", "R5", "R6", "R7", "R8"]).cell_suids,
+        )
+
+
+class CellAddition(unittest.TestCase):
+    def test_cell_cell_addition(self):
+        self.assertEqual(
+            (Cell("R4") + Cell("R5")).cell_suids,
+            CellCollection(["R4", "R5"]).cell_suids,
+        )
+
+
+class CellSubtraction(unittest.TestCase):
+    def test_cell_cell_Subtraction(self):
+        self.assertEqual(
+            (Cell("R4") - Cell("R44")).cell_suids,
+            CellCollection(
+                ["R40", "R41", "R42", "R43", "R45", "R46", "R47", "R48"]
+            ).cell_suids,
         )
 
 
@@ -117,7 +135,7 @@ class CellCollectionInstantiation(unittest.TestCase):
         assert type(CellCollection(["R1", "R4", "R5"])) == CellCollection
 
     def test_invalid_collection_creation(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             CellCollection(["R1", "frog"])
 
     def test_deduplication(self):
