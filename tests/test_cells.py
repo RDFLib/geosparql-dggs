@@ -8,7 +8,6 @@ CHANGELOG:
 import unittest
 from source.dggs_classes import *
 
-
 class CellValid(unittest.TestCase):
     def test_dggs_geom_format_invalid_1(self):
         with self.assertRaises(ValueError):

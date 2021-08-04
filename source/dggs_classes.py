@@ -1,6 +1,7 @@
 from __future__ import annotations
 from itertools import product, chain
 from typing import Union
+from ipycanvas import Canvas
 
 zero_cells = ["N", "O", "P", "Q", "R", "S"]
 N_crs = {"auspix": 3}
@@ -23,7 +24,6 @@ class CellCollection:
         """
         self.cells = cells
         if not self.empty():
-
             # standardise input and set up basic attributes
             self.standardise_input()
             self.crs = crs if crs else self.cells[0].crs
@@ -64,13 +64,8 @@ class CellCollection:
             return "Empty CellCollection"
 
     def __add__(self, other):
-        self._matches(other)
-        if isinstance(other, Cell):
-            other = CellCollection(other)
-        if not isinstance(other, CellCollection):
-            raise ValueError(
-                f"Only a Cell or CellCollection can be added to a CellCollection. Object of type {other.type} was passed."
-                )
+        self._matches(other)  # TODO pull out as general method - applies to both Cells and CellCollections
+        other = validate_other(other)
         new_suids = list(set(self.cell_suids).union(set(other.cell_suids)))
         return CellCollection(new_suids)
 
@@ -91,8 +86,7 @@ class CellCollection:
                     else:
                         cells_to_retain.append(cell_one.suid)
 
-        if isinstance(other, Cell):
-            other = CellCollection(other)
+        other = validate_other(other)
         progressively_intersect(self.cells, other.cells)
         overall = list(set(cells_to_retain) - set(cells_to_remove))
         return CellCollection([Cell(cell) for cell in overall])
@@ -280,11 +274,11 @@ class Cell:
         return "".join([str(i) for i in self.suid])
 
     def __add__(self, other: Union[Cell, CellCollection]):
-        other = self._validate_other(other)
+        other = validate_other(other)
         return CellCollection(self) + other
 
     def __sub__(self, other: Union[Cell, CellCollection]):
-        other = self._validate_other(other)
+        other = validate_other(other)
         return CellCollection(self) - other
 
     def __len__(self):
@@ -624,16 +618,17 @@ class Cell:
                 return False
         return True
 
-    def _validate_other(self, other):
-        """
-        Validates the "other" object in Cell-Cell or Cell-CellCollection operations e.g. addition and subtraction
-        :return:
-        """
-        if isinstance(other, Cell):
-            other = CellCollection(other)
-        if not isinstance(other, CellCollection):
-            raise ValueError(
-                f"Only a Cell or CellCollection can have operations made against it from a Cell. "
-                f"Object of type {other.type} was passed."
-                )
-        return other
+
+def validate_other(other):
+    """
+    Validates the "other" object in Cell-Cell or Cell-CellCollection operations e.g. addition and subtraction
+    :return:
+    """
+    if isinstance(other, Cell):
+        other = CellCollection(other)
+    if not isinstance(other, CellCollection):
+        raise ValueError(
+            f"Only a Cell or CellCollection can have operations made against it from a Cell. "
+            f"Object of type {other.type} was passed."
+            )
+    return other
