@@ -1,5 +1,5 @@
 from typing import Union
-from source.dggs_classes import Cell, CellCollection
+from _source.dggs_classes import Cell, CellCollection
 
 """
 geof:sfEquals(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean

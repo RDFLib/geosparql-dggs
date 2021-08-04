@@ -1,7 +1,6 @@
 from __future__ import annotations
 from itertools import product, chain
 from typing import Union
-from ipycanvas import Canvas
 
 zero_cells = ["N", "O", "P", "Q", "R", "S"]
 N_crs = {"auspix": 3}

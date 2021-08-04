@@ -1,12 +1,12 @@
 """
-This Python 3.3 code tests the ``source.dggs_classes`` module.
+This Python 3.8 code tests the ``source.dggs_classes`` module.
 Beware, these tests cover only some functions and only some scenarios.
 Keep adding tests!
 CHANGELOG:
-- 2021-03-17:   David Habgood (DH): Initial version
+- 2021-07-19:   David Habgood (DH): Initial version
 """
 import unittest
-from source.dggs_classes import *
+from _source.dggs_classes import *
 
 class CellValid(unittest.TestCase):
     def test_dggs_geom_format_invalid_1(self):

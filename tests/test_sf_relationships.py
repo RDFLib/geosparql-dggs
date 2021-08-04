@@ -1,12 +1,12 @@
 """
-This Python 3.3 code tests the ``sources.dggs_functions`` module.
+This Python 3.8 code tests the ``sources.dggs_functions`` module.
 Beware, these tests cover only some functions and only some scenarios.
 Keep adding tests!
 CHANGELOG:
-- 2021-03-17:   David Habgood (DH): Initial version
+- 2021-07-19:   David Habgood (DH): Initial version
 """
 import unittest
-from source import *
+from _source import *
 
 
 class SFRelationships(unittest.TestCase):
