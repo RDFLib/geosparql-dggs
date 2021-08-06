@@ -122,8 +122,8 @@ class CellCollection:
                 )
         all_neighbours = CellCollection()
         for cell in self.cells:
-            if cell.resolution > resolution:
-                all_neighbours += cell.children(resolution).neighbours()
+            if cell.resolution < resolution:
+                all_neighbours += cell.border(resolution).neighbours()
             else:
                 all_neighbours += cell.neighbours()
         # return only the neighbours around edges (i.e. we're not interested in neighbours of interior cells that are
@@ -147,6 +147,7 @@ class CellCollection:
             raise TypeError(
                 "Input must be of type string, list, or Cell."
                 )
+
         # all cells must have the same CRS
         if isinstance(self.cells, str):
             self.cells = [Cell(self.cells)]
@@ -154,7 +155,6 @@ class CellCollection:
             self.cells = [self.cells]
         # at this point instances representing a single Cell have been coerced to a list with a Cell
         # convert lists of strings to lists of Cells
-        assert isinstance(self.cells, list)
         if len(self.cells) == 0:
             raise ValueError("Cell Collections cannot be empty.")
         if isinstance(self.cells[0], str):
@@ -590,9 +590,9 @@ class Cell:
                         )
                     )
                 )
-        zero_cell = self.suid[0]
+        # zero_cell = self.suid[0]
         all_cells = CellCollection(
-            [zero_cell + "".join([str(j) for j in i]) for i in all_edges]
+            [self.__str__() + "".join([str(j) for j in i]) for i in all_edges]
             )
         return all_cells
 

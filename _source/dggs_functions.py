@@ -1,34 +1,5 @@
 from typing import Union
-from _source.dggs_classes import Cell, CellCollection
-
-"""
-geof:sfEquals(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
-(TFFFTFFFT)
-
-geof:sfDisjoint(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
-(FF*FF****)
-
-geof:sfIntersects(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
-(FT******* F**T***** F***T****)
-
-geof:sfTouches(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
-(FT******* F**T***** F***T****)
-
-geof:sfCrosses(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
-(T*T***T**) for P/L, P/A, L/A; (0*T***T**) for L/L
-
-geof:sfWithin(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
-(T*F**F***)
-
-geof:sfContains(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
-(T*****FF*)
-
-geof:sfOverlaps(geom1: ogc:geomLiteral, geom2: ogc:geomLiteral): xsd:boolean
-(T*T***T**) for A/A, P/P; (1*T***T**) for L/L
-"""
-
-
-# Assumes suid are given as lists of suid or single suid
+from _source.dggs_classes import CellCollection
 
 
 class DGGSsfRelationships:
@@ -39,7 +10,7 @@ class DGGSsfRelationships:
         self.coll_2 = CellCollection(cell_or_cells_2)
 
     @classmethod
-    def sfEqualsBool(cls, cells_one: Union[str, list], cells_two: [str, list]):
+    def sfEquals(cls, cells_one: Union[str, list], cells_two: [str, list]):
         """
         :param cells_one: a string or list of strings representing cells
         :param cells_two: a string or list of strings representing cells
@@ -59,7 +30,7 @@ class DGGSsfRelationships:
         """
         # first check cells_one and cells_two are not equal
         SF = cls(cells_one, cells_two)
-        if not cls.sfEqualsBool(SF.coll_1.cell_suids, SF.coll_2.cell_suids):
+        if not cls.sfEquals(SF.coll_1.cell_suids, SF.coll_2.cell_suids):
             # then if cells_one + cells_two = cells_one, cells_one must contain cells_two
             if (SF.coll_1 + SF.coll_2).cell_suids == SF.coll_1.cell_suids:
                 return True
@@ -74,14 +45,14 @@ class DGGSsfRelationships:
         """
         # first check cells_one and cells_two are not equal
         SF = cls(cells_one, cells_two)
-        if not cls.sfEqualsBool(SF.coll_1.cell_suids, SF.coll_2.cell_suids):
+        if not cls.sfEquals(SF.coll_1.cell_suids, SF.coll_2.cell_suids):
             # then if cells_one + cells_two = cells_two, cells_two must contain cells_one
             if (SF.coll_1 + SF.coll_2).cell_suids == SF.coll_2.cell_suids:
                 return True
         return False
 
     @classmethod
-    def sfOverlapsBool(cls, cells_one: Union[str, list], cells_two: [str, list]):
+    def sfOverlaps(cls, cells_one: Union[str, list], cells_two: [str, list]):
         """
         :param cells_one: a string or list of strings representing cells
         :param cells_two: a string or list of strings representing cells
@@ -90,9 +61,10 @@ class DGGSsfRelationships:
         # implemented as a negative test for disjoint, equals, contains, and within
         if (
             not cls.sfDisjoint(cells_one, cells_two)
-            and not cls.sfEqualsBool(cells_one, cells_two)
+            and not cls.sfEquals(cells_one, cells_two)
             and not cls.sfContains(cells_one, cells_two)
             and not cls.sfWithin(cells_one, cells_two)
+            and not cls.sfTouches(cells_one, cells_two)
         ):
             return True
         return False
@@ -105,9 +77,12 @@ class DGGSsfRelationships:
         :return: boolean as to whether cells_one and cells_two are disjoint i.e. no kind of spatial relationship
         """
         SF = cls(cells_one, cells_two)
-        return not region_region_intersection(
-            SF.coll_1.cell_suids, SF.coll_2.cell_suids
-        )
+        if (
+            not region_region_intersection(SF.coll_1.cell_suids, SF.coll_2.cell_suids)
+            and not cls.sfTouches(cells_one, cells_two)
+        ):
+            return True
+        return False
 
     @classmethod
     def sfIntersects(cls, cells_one: Union[str, list], cells_two: [str, list]):
@@ -116,40 +91,72 @@ class DGGSsfRelationships:
         :param cells_two: a string or list of strings representing cells
         :return: boolean as to whether cells_one and cells_two are disjoint i.e. no kind of spatial relationship
         """
-        if cls.sfEqualsBool(cells_one, cells_two):
+        if cls.sfEquals(cells_one, cells_two):
             return True
         elif cls.sfContains(cells_one, cells_two):
             return True
         elif cls.sfWithin(cells_one, cells_two):
             return True
-        elif cls.sfOverlapsBool(cells_one, cells_two):
+        elif cls.sfOverlaps(cells_one, cells_two):
+            return True
+        elif cls.sfTouches(cells_one, cells_two):
             return True
         return False
 
     @classmethod
     def sfTouches(cls, cells_one: Union[str, list], cells_two: [str, list]):
+        # if the geometries are equal, they touch, this scenario is not covered by the other processing
+        if cls.sfEquals(cells_one, cells_two):
+            return False
+        if region_region_intersection(cells_one, cells_two):
+            return False
         SF = cls(cells_one, cells_two)
+        # find the max resolution (smallest cells) among the two geometries
         if SF.coll_1.max_resolution > SF.coll_2.max_resolution:
             max_resolution = SF.coll_1.max_resolution
         else:
             max_resolution = SF.coll_2.max_resolution
+        # estimate which geometry is smaller based on their lengths
         if len(SF.coll_1) < len(SF.coll_2):
             smaller_collection_neighbours = SF.coll_1.neighbours(max_resolution)
             larger_collection = cells_two
         else:
             smaller_collection_neighbours = SF.coll_2.neighbours(max_resolution)
             larger_collection = cells_one
-        if cls.sfIntersects(
-            smaller_collection_neighbours.cell_suids, larger_collection
-        ):
+        # if the neighbouring cells of a geometry are common to the other geometry then they touch
+        # with the caveat that we must use neighbours at the maximum (smallest cells) resolution
+        # .. and we need to filter on geometries that overlap in the first place
+        if common_cells(smaller_collection_neighbours.cell_suids, larger_collection):
             return True
         return False
 
-    # could be implemented by shifting a geometry by one cell (of the lowest resolution of the cells making up that
-    # collection) in each of north/south/east/west then seeing if THESE new shapes intersect the second geometry.
-    # (Shift the smaller geometry for efficiency).
-    # This would require a "shift" method which has not yet been written ..
 
+def dggs_cell_overlap(cell_one: str, cell_two: str):
+    """
+    Determines whether two DGGS cells overlap.
+    Where cells are of different resolution, they will have different suid lengths. The zip function truncates the longer
+    to be the same length as the shorter, producing two lists for comparison. If these lists are equal, the cells overlap.
+    :param cell_one: the first DGGS cell
+    :param cell_two: the second DGGS cell
+    :return: True if overlaps
+    """
+    for i, j in zip(cell_one, cell_two):
+        if i != j:
+            return False
+    return True
+
+
+def dggs_cell_region_overlap(cell: str, region: list):
+    """
+    Determine whether a cell overlaps with any cell in a list of cells
+    :param cell: a DGGS cell
+    :param region: a list of DGGS cells
+    :return: True if any overlapping cells
+    """
+    for component_cell in region:
+        if dggs_cell_overlap(cell, component_cell):
+            return True
+    return False
 
 def region_region_intersection(region_one: list, region_two: list):
     """
@@ -161,83 +168,30 @@ def region_region_intersection(region_one: list, region_two: list):
     :param cell_two: the second DGGS cell
     :return: True if overlaps
     """
+    if isinstance(region_one, str):
+        region_one = [region_one]
+    if isinstance(region_two, str):
+        region_two = [region_two]
     for cell_one in region_one:
-        for cell_two in region_two:
-            for i, j in zip(cell_one, cell_two):
-                if i != j:
-                    return False
-    return True
-    #         intersects = False
-    #         relationships["disjoint"].append((cell_one, cell_two))
-    #         break
-    # if intersects:
-    #     if len(cell_one) < len(cell_two):
-    #         relationships["contains"].append((cell_one, cell_two))
-    #     elif len(cell_one) > len(cell_two):
-    #         relationships["within"].append((cell_one, cell_two))
-    #     elif len(cell_one) == len(cell_two):
-    #         relationships["equal"].append((cell_one, cell_two))
-    # summary = set(relationships.keys())
-    # if summary == {'contains', 'equal'} or summary == {'contains', 'disjoint'} or summary == {'contains', 'equal',
-    #                                                                                           'disjoint'}:
-    #     summary = {'contains'}
-    # elif summary == {'within', 'equal'} or summary == {'within', 'disjoint'} summary == {'within', 'equal',
-    #                                                                                           'disjoint'}:
-    #     summary = {'within'}
-    #
-    #     return_rel = 'contains'
-    # if summary == {'within'}:
-    #     return_rel = 'within'
-    # if summary == {'within', 'contains'}
-    #     return_rel = 'overlaps'
-    # if len()
+        if dggs_cell_region_overlap(cell_one, region_two):
+            return True
+    return False
 
-    # if return_relationships:
-    #     if not intersection:
-    #         return False, relationships["disjoint"].append((cell_one, cell_two))
-    #     else:
-    #         if len(cell_one) < len(cell_two):
-    #             relationships["contains"].append((cell_one, cell_two))
-    #         elif len(cell_one) > len(cell_two):
-    #             relationships["within"].append((cell_one, cell_two))
-    #         elif len(cell_one) == len(cell_two):
-    #             relationships["equal"].append((cell_one, cell_two))
-    #         return True, relationships
-    # else:
-    #     return intersection
+def common_cells(region_one: list, region_two: list):
+    """
+    Determines whether there are any cells in common between two lists of cells
+    NB does not take in to account resolution. Cells should be at the same input resolution.
+    :param region_one: a list of strings representing cell suids
+    :param region_two: a list of strings representing cell suids
+    :return: boolean
+    """
+    if isinstance(region_one, str):
+        region_one = [region_one]
+    if isinstance(region_two, str):
+        region_two = [region_two]
+    for cell in region_one:
+        if cell in region_two:
+            return True
+    return False
 
 
-# def cell_region_intersection(cell: str, region: set, return_relationships=False, relationships={}):
-#     """
-#     Determine whether a cell overlaps with any cell in a list of suid
-#     :param cell: a DGGS cell
-#     :param region: a list of DGGS suid
-#     :return: True if the cell overlaps the region
-#     """
-#     for component_cell in region:
-#         if cell_cell_intersection(cell, component_cell):
-#             return True
-#     return False
-#
-# def region_region_intersection(regionOne: set, regionTwo: set, return_relationships=False, relationships={}):
-#     """
-#     Determine whether a cell overlaps with any cell in a list of suid
-#     :param regionOne: a DGGS region
-#     :param regionTwo: a DGGS region
-#     :return: True if the regions overlap
-#     """
-#     for component_cell in regionOne:
-#         if cell_region_intersection(component_cell, regionTwo):
-#             return True
-#     return False
-
-
-# def canonical_form(cells_one, cells_two):
-#     # coerces strings and lists of strings to sets of strings, this is to:
-#     # - remove duplication of cells
-#     # - facilitate working with one type (set) rather than two or more (strings, tuples, lists etc.)
-#     cells_one = [cells_one] if isinstance(cells_one, str) else cells_one
-#     cells_two = [cells_two] if isinstance(cells_two, str) else cells_two
-#     cells_one = [Cell(cell_str) for cell_str in cells_one]
-#     cells_two = [Cell(cell_str) for cell_str in cells_two]
-#     return cells_one, cells_two

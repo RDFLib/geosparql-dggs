@@ -8,6 +8,7 @@ CHANGELOG:
 import unittest
 from _source.dggs_classes import *
 
+
 class CellValid(unittest.TestCase):
     def test_dggs_geom_format_invalid_1(self):
         with self.assertRaises(ValueError):
@@ -43,7 +44,7 @@ class CellNeighbours(unittest.TestCase):
         self.assertEqual(
             Cell("R4").neighbours().cell_suids,
             CellCollection(["R0", "R1", "R2", "R3", "R5", "R6", "R7", "R8"]).cell_suids,
-        )
+            )
 
 
 class CellAddition(unittest.TestCase):
@@ -51,7 +52,7 @@ class CellAddition(unittest.TestCase):
         self.assertEqual(
             (Cell("R4") + Cell("R5")).cell_suids,
             CellCollection(["R4", "R5"]).cell_suids,
-        )
+            )
 
 
 class CellSubtraction(unittest.TestCase):
@@ -60,8 +61,8 @@ class CellSubtraction(unittest.TestCase):
             (Cell("R4") - Cell("R44")).cell_suids,
             CellCollection(
                 ["R40", "R41", "R42", "R43", "R45", "R46", "R47", "R48"]
-            ).cell_suids,
-        )
+                ).cell_suids,
+            )
 
 
 class CellBorder(unittest.TestCase):
@@ -69,13 +70,13 @@ class CellBorder(unittest.TestCase):
         self.assertEqual(
             Cell("R").border().suid,
             Cell("R").suid,
-        )
+            )
 
     def test_border_no_resolution_1(self):
         self.assertEqual(
             Cell("R").border(resolution=1).cell_suids,
             CellCollection(["R0", "R1", "R2", "R3", "R5", "R6", "R7", "R8"]).cell_suids,
-        )
+            )
 
     def test_border_no_resolution_2(self):
         self.assertEqual(
@@ -114,9 +115,9 @@ class CellBorder(unittest.TestCase):
                     "R86",
                     "R87",
                     "R88",
-                ]
-            ).cell_suids,
-        )
+                    ]
+                ).cell_suids,
+            )
 
 
 class CellCollectionNeighbours(unittest.TestCase):
@@ -125,8 +126,19 @@ class CellCollectionNeighbours(unittest.TestCase):
             CellCollection(["P4", "P5"]).neighbours().cell_suids,
             CellCollection(
                 ["P0", "P1", "P2", "P3", "P6", "P7", "P8", "Q0", "Q3", "Q6"]
-            ).cell_suids,
-        )
+                ).cell_suids,
+            )
+
+    def test_neighbours_at_resolution(self):
+        self.assertEqual(
+            CellCollection(["P4"]).neighbours(resolution=3).cell_suids,
+            CellCollection(
+                ['P088', 'P166', 'P167', 'P168', 'P176', 'P177', 'P178', 'P186', 'P187', 'P188', 'P266', 'P322', 'P325',
+                 'P328', 'P352', 'P355', 'P358', 'P382', 'P385', 'P388', 'P500', 'P503', 'P506', 'P530', 'P533', 'P536',
+                 'P560', 'P563', 'P566', 'P622', 'P700', 'P701', 'P702', 'P710', 'P711', 'P712', 'P720', 'P721', 'P722',
+                 'P800']).cell_suids,
+            )
+
 
 class CellCollectionInstantiation(unittest.TestCase):
     def test_collection_creation(self):
@@ -139,7 +151,7 @@ class CellCollectionInstantiation(unittest.TestCase):
     def test_deduplication(self):
         self.assertEqual(
             (CellCollection(["R4", "R1", "R5", "R5"]).cell_suids), ["R1", "R4", "R5"]
-        )
+            )
 
     def test_absorb(self):
         self.assertEqual((CellCollection(["R1", "R12", "R123"]).cell_suids), ["R1"])
@@ -150,17 +162,17 @@ class CellCollectionsOperations(unittest.TestCase):
         assert (CellCollection(["R1"]) + CellCollection(["R2"])).cell_suids == [
             "R1",
             "R2",
-        ]
+            ]
 
     def test_collection_subtraction(self):
         assert set(
             (CellCollection(["R1", "R2"]) - CellCollection(["R12"])).cell_suids
-        ) == set(["R10", "R11", "R13", "R14", "R15", "R16", "R17", "R18", "R2"])
+            ) == set(["R10", "R11", "R13", "R14", "R15", "R16", "R17", "R18", "R2"])
 
     def test_collection_cell_subtraction(self):
         assert (CellCollection(["R1"]) - Cell("R12")).cell_suids == [
             "R10", "R11", "R13", "R14", "R15", "R16", "R17", "R18"
-        ]
+            ]
 
     def test_empty_result(self):
         assert (CellCollection(["R1"]) - CellCollection("R1")).cell_suids == []
@@ -168,17 +180,8 @@ class CellCollectionsOperations(unittest.TestCase):
 
 class CellChildren(unittest.TestCase):
     def test_collection_children(self):
-        assert [cell.__str__() for cell in Cell("R").children()] == [
-            "R0",
-            "R1",
-            "R2",
-            "R3",
-            "R4",
-            "R5",
-            "R6",
-            "R7",
-            "R8",
-        ]
+        assert [cell.__str__() for cell in Cell("R").children()] == ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7',
+                                                                     'R8']
 
 
 class CellOverlaps(unittest.TestCase):
@@ -188,12 +191,13 @@ class CellOverlaps(unittest.TestCase):
     def test_overlaps_false(self):
         self.assertFalse(Cell("R2").overlaps(Cell("R12")))
 
+
 class CellCollectionMatches(unittest.TestCase):
     def test_collection_matches(self):
         self.assertTrue(
             CellCollection(["P4"], crs='auspix', kind='rHEALPix').cell_suids ==
             CellCollection(["P4"], crs='auspix', kind='rHEALPix').cell_suids
-        )
+            )
 
     def test_collection_not_matches(self):
         with self.assertRaises(ValueError):

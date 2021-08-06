@@ -20,7 +20,7 @@ class SFRelationships(unittest.TestCase):
 
     # overlaps
     def test_sf_overlaps(self):
-        self.assertFalse(sfOverlaps(["P1", "P2"], ["P2", "P3"]))
+        self.assertTrue(sfOverlaps(["P1", "P2"], ["P2", "P3"]))
 
     def test_sf_not_overlaps_equal(self):
         self.assertFalse(sfOverlaps("P1", "P1"))
@@ -36,10 +36,13 @@ class SFRelationships(unittest.TestCase):
 
     # disjoint
     def test_sf_disjoint(self):
+        self.assertTrue(sfDisjoint("P0", "P2"))
+
+    def test_sf_disjoint(self):
         self.assertFalse(sfDisjoint("P1", "P1"))
 
     def test_sf_not_disjoint(self):
-        self.assertTrue(sfDisjoint("P1", "P2"))
+        self.assertFalse(sfDisjoint("P1", "P2"))
 
     def test_sf_disjoint_different_res(self):
         self.assertFalse(sfDisjoint("P100", "P1"))
@@ -48,7 +51,7 @@ class SFRelationships(unittest.TestCase):
         self.assertFalse(sfDisjoint(["P1", "P2"], "P100"))
 
     def test_sf_disjoint_list_str(self):
-        self.assertTrue(sfDisjoint(["P1", "P2"], "P3"))
+        self.assertFalse(sfDisjoint(["P1", "P2"], "P3"))
 
     # contains
     def test_sf_contains(self):
@@ -86,6 +89,11 @@ class SFRelationships(unittest.TestCase):
     def test_sf_touches_false(self):
         self.assertFalse(sfTouches("P1", "P7"))
 
+    def test_sf_touches_false_2(self):
+        self.assertFalse(sfTouches("P1", "P1"))
+
+    def test_sf_touches_false_3(self):
+        self.assertFalse(sfTouches(["R03", "R04"], ["R03", "R04", "R06", "R07"]))
 
 if __name__ == "__main__":
     unittest.main()
