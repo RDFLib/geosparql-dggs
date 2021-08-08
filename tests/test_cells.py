@@ -46,6 +46,21 @@ class CellNeighbours(unittest.TestCase):
             CellCollection(["R0", "R1", "R2", "R3", "R5", "R6", "R7", "R8"]).cell_suids,
             )
 
+    def test_hemisphere_neighbours_res_1(self):
+        self.assertEqual(
+            Cell('P0').neighbours(), 'N5 N8 O2 O5 P1 P3 P4'
+            )
+
+    def test_zero_neighbours_P(self):
+        self.assertEqual(
+            Cell('P').neighbours(), 'N O Q S'
+            )
+
+    def test_zero_neighbours_N(self):
+        self.assertEqual(
+            Cell('N').neighbours(), 'O P Q R'
+            )
+
 
 class CellAddition(unittest.TestCase):
     def test_cell_cell_addition(self):
@@ -64,6 +79,23 @@ class CellSubtraction(unittest.TestCase):
                 ).cell_suids,
             )
 
+class CellEquality(unittest.TestCase):
+    def test_cell_equal_positive(self):
+        self.assertEqual(
+            Cell("R4"), Cell("R4"))
+
+    def test_cell_equal_negative(self):
+        self.assertNotEqual(
+            Cell("R4"), Cell("R1"))
+
+class CellCollectionEquality(unittest.TestCase):
+    def test_cell_collection_equal_positive(self):
+        self.assertEqual(
+            CellCollection(["R4", "R3"]), CellCollection(["R3", "R4"]))
+
+    def test_cell_collection_equal_negative(self):
+        self.assertNotEqual(
+            CellCollection(["R4", "R3"]), CellCollection(["R3123", "R4543"]))
 
 class CellBorder(unittest.TestCase):
     def test_border_no_resolution_specified(self):

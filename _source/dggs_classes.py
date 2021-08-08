@@ -68,6 +68,9 @@ class CellCollection:
         new_suids = list(set(self.cell_suids).union(set(other.cell_suids)))
         return CellCollection(new_suids)
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
     def __sub__(self, other: Union[Cell, CellCollection]):
 
         global cells_to_retain, cells_to_remove
@@ -150,7 +153,8 @@ class CellCollection:
 
         # all cells must have the same CRS
         if isinstance(self.cells, str):
-            self.cells = [Cell(self.cells)]
+            self.cells = self.cells.split(' ')
+            self.cells = [Cell(suid) for suid in self.cells]
         if isinstance(self.cells, Cell):
             self.cells = [self.cells]
         # at this point instances representing a single Cell have been coerced to a list with a Cell
@@ -276,6 +280,9 @@ class Cell:
         other = validate_other(other)
         return CellCollection(self) + other
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
     def __sub__(self, other: Union[Cell, CellCollection]):
         other = validate_other(other)
         return CellCollection(self) - other
@@ -296,9 +303,13 @@ class Cell:
         # # any remaining characters should be digits in the range 0..N^2
         if len(suid_str) > 1:
             for i in suid_str[1:]:
-                if not int(i) in range(self.N ** 2):
+                try:
+                    int(i) in range(self.N ** 2)
+                except ValueError:
                     raise ValueError(
-                        f"Suid identifier digits must be in the range 0:{self.N ** 2}"
+                        f"Invalid Cell suid digit \"{i}\". (As part of Cell suid \"{suid_str}\"). "
+                        f"Suid identifier digits must be in the range "
+                        f"0:{self.N ** 2}"
                         )
         return tuple([suid_str[0]] + [int(i) for i in suid_str[1:]])
 
