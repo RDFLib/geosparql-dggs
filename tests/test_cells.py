@@ -18,9 +18,6 @@ class CellValid(unittest.TestCase):
         with self.assertRaises(ValueError):
             Cell("RH")
 
-    # def test_dggs_geom_compression_1(self):
-    #     assert Cell(['P012', 'N013']).suid == ['N013', 'P012']
-
     def test_dggs_geom_single_cell(self):
         assert Cell("P012").suid == ("P", 0, 1, 2)
 
