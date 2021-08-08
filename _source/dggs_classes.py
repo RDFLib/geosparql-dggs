@@ -428,11 +428,11 @@ class Cell:
         neighbours = []
         for direction in ("up", "down", "left", "right"):
             neighbours.append(self.neighbour(direction))
-        if include_diagonals:
-            neighbours.append(self.neighbour("up").neighbour("left"))
-            neighbours.append(self.neighbour("up").neighbour("right"))
-            neighbours.append(self.neighbour("down").neighbour("left"))
-            neighbours.append(self.neighbour("down").neighbour("right"))
+        if include_diagonals and self.resolution > 0:
+            neighbours.append(self.neighbour("left").neighbour("up"))
+            neighbours.append(self.neighbour("left").neighbour("down"))
+            neighbours.append(self.neighbour("right").neighbour("up"))
+            neighbours.append(self.neighbour("right").neighbour("down"))
         return CellCollection(neighbours)
 
     def neighbour(self, direction):
