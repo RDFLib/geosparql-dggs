@@ -105,9 +105,11 @@ class DGGSsfRelationships:
 
     @classmethod
     def sfTouches(cls, cells_one: Union[str, list], cells_two: [str, list]):
-        # if the geometries are equal, they touch, this scenario is not covered by the other processing
+        # if the geometries are equal, they do not touch, this scenario is not covered by the other processing
         if cls.sfEquals(cells_one, cells_two):
             return False
+        # if the geometries have regional intersection, they do not touch, they have some other spatial relationship
+        # TODO confirm whether this is desired behaviour.
         if region_region_intersection(cells_one, cells_two):
             return False
         SF = cls(cells_one, cells_two)

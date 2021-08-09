@@ -332,6 +332,7 @@ class Cell:
 
     def atomic_neighbours(self):
         # atomic neighbours created from rhealpix
+        # using code from https://github.com/manaakiwhenua/rhealpixdggs-py
         # TODO memoize using code below
         n3_atomic_neighbours = {
             3: {
@@ -447,6 +448,7 @@ class Cell:
         return CellCollection(neighbours)
 
     def neighbour(self, direction):
+        # using code from https://github.com/manaakiwhenua/rhealpixdggs-py
         an = self.atomic_neighbours()
         suid = self.suid
         N = self.N
@@ -564,6 +566,7 @@ class Cell:
             return x
 
     def rotate(self, suid, quarter_turns):
+        # using code from https://github.com/manaakiwhenua/rhealpixdggs-py
         """
         Return the suid of the cell that is the result of rotating this cell's
         resolution 0 supercell by `quarter_turns` quarter turns anticlockwise.
@@ -572,6 +575,7 @@ class Cell:
         return [self.rotate_entry(x, quarter_turns) for x in suid]
 
     def child_order(self):
+        # using code from https://github.com/manaakiwhenua/rhealpixdggs-py
         child_order = {}
         for (row, col) in product(list(range(self.N)), repeat=2):
             order = row * self.N + col
@@ -590,6 +594,7 @@ class Cell:
             return self
         else:
             resolution_delta = resolution - self.resolution
+            #TODO create functions for left right top bottom border - code above in 'neighbour'
             left_edge = product([0, 3, 6], repeat=resolution_delta)
             right_edge = product([2, 5, 8], repeat=resolution_delta)
             top_edge = product([0, 1, 2], repeat=resolution_delta)
@@ -601,7 +606,6 @@ class Cell:
                         )
                     )
                 )
-        # zero_cell = self.suid[0]
         all_cells = CellCollection(
             [self.__str__() + "".join([str(j) for j in i]) for i in all_edges]
             )
@@ -615,7 +619,7 @@ class Cell:
             resolution_delta = resolution - self.resolution
         children_tuples = [
             self.suid + i
-            for i in product([0, 1, 2, 3, 4, 5, 6, 7, 8], repeat=resolution_delta)
+            for i in product(range(self.N**3), repeat=resolution_delta)
             ]
         children_cells_list = [Cell(cell_tuple) for cell_tuple in children_tuples]
         return children_cells_list
