@@ -95,5 +95,6 @@ class SFRelationships(unittest.TestCase):
     def test_sf_touches_false_3(self):
         self.assertFalse(sfTouches(["R03", "R04"], ["R03", "R04", "R06", "R07"]))
 
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,17 +1,36 @@
 from rdflib import Literal
-from _source import sfOverlaps, sfEquals, sfTouches, sfWithin, sfContains, sfDisjoint, sfIntersects
+from _source import (
+    sfOverlaps,
+    sfEquals,
+    sfTouches,
+    sfWithin,
+    sfContains,
+    sfDisjoint,
+    sfIntersects,
+)
 
 
 def validate_and_clean(cell_or_cellcollection_literal):
-    if cell_or_cellcollection_literal.startswith('CELLLIST (('):
-        cells_list = cell_or_cellcollection_literal.replace('CELLLIST ((', '').replace('))', '').split(' ')
-    elif cell_or_cellcollection_literal.startswith('CELL ('):
-        cells_list = cell_or_cellcollection_literal.replace('CELL (', '').replace(')', '').split(' ')
+    if cell_or_cellcollection_literal.startswith("CELLLIST (("):
+        cells_list = (
+            cell_or_cellcollection_literal.replace("CELLLIST ((", "")
+            .replace("))", "")
+            .split(" ")
+        )
+    elif cell_or_cellcollection_literal.startswith("CELL ("):
+        cells_list = (
+            cell_or_cellcollection_literal.replace("CELL (", "")
+            .replace(")", "")
+            .split(" ")
+        )
     else:
-        raise ValueError("DGGS strings must be formatted as DGGS Literals, e.g. the format: "
-                         "'CELL (R012)' or "
-                         "'CELLLIST ((R0 S1 Q2))'")
+        raise ValueError(
+            "DGGS strings must be formatted as DGGS Literals, e.g. the format: "
+            "'CELL (R012)' or "
+            "'CELLLIST ((R0 S1 Q2))'"
+        )
     return cells_list
+
 
 def contains(a, b) -> Literal:
     """SPARQL dggs:sfContains
@@ -33,6 +52,7 @@ def contains(a, b) -> Literal:
         return Literal(True)
     return Literal(False)
 
+
 def within(a, b) -> Literal:
     """SPARQL dggs:sfWithin
 
@@ -53,6 +73,7 @@ def within(a, b) -> Literal:
         return Literal(True)
     return Literal(False)
 
+
 def disjoint(a, b) -> Literal:
     """SPARQL dggs:sfDisjoint
 
@@ -72,6 +93,7 @@ def disjoint(a, b) -> Literal:
     if sfDisjoint(a, b):
         return Literal(True)
     return Literal(False)
+
 
 def intersects(a, b) -> Literal:
     """SPARQL dggs:sfIntersects
@@ -94,6 +116,7 @@ def intersects(a, b) -> Literal:
         return Literal(True)
     return Literal(False)
 
+
 def touches(a, b) -> Literal:
     """SPARQL dggs:sfTouches
 
@@ -114,6 +137,7 @@ def touches(a, b) -> Literal:
         return Literal(True)
     return Literal(False)
 
+
 def overlaps(a, b) -> Literal:
     """SPARQL dggs:sfOverlaps
 
@@ -133,6 +157,7 @@ def overlaps(a, b) -> Literal:
     if sfOverlaps(a, b):
         return Literal(True)
     return Literal(False)
+
 
 def equals(a, b) -> Literal:
     """SPARQL dggs:sfEquals

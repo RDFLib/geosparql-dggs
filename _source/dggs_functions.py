@@ -77,10 +77,9 @@ class DGGSsfRelationships:
         :return: boolean as to whether cells_one and cells_two are disjoint i.e. no kind of spatial relationship
         """
         SF = cls(cells_one, cells_two)
-        if (
-            not region_region_intersection(SF.coll_1.cell_suids, SF.coll_2.cell_suids)
-            and not cls.sfTouches(cells_one, cells_two)
-        ):
+        if not region_region_intersection(
+            SF.coll_1.cell_suids, SF.coll_2.cell_suids
+        ) and not cls.sfTouches(cells_one, cells_two):
             return True
         return False
 
@@ -160,6 +159,7 @@ def dggs_cell_region_overlap(cell: str, region: list):
             return True
     return False
 
+
 def region_region_intersection(region_one: list, region_two: list):
     """
     Determines whether two DGGS suid overlap.
@@ -179,6 +179,7 @@ def region_region_intersection(region_one: list, region_two: list):
             return True
     return False
 
+
 def common_cells(region_one: list, region_two: list):
     """
     Determines whether there are any cells in common between two lists of cells
@@ -195,5 +196,3 @@ def common_cells(region_one: list, region_two: list):
         if cell in region_two:
             return True
     return False
-
-
