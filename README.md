@@ -45,6 +45,18 @@ The above stript outputs:
 ```bash
 https://geom-b is within https://geom-a
 ```
+
+The functions can also be used directly (without RDFLib) by direct import from _source, for example:
+```python
+from _source import sfEquals
+
+sfEquals("R1", "R1")
+```
+The above stript outputs:
+
+```bash
+True
+```
 ## Function Definitions
 The Simple Feature relations have been interpreted in the following way for the context of a nested square DGGS grid (such as rHEALPix grids.  
 
@@ -59,7 +71,7 @@ dggs:sfOverlaps: One set of cells (A) overlaps some other set of cells (B) where
 ## Testing
 All tests are in `tests/` and implemented using [unittest](http://docs.python.org/library/unittest.html).
 
-There are individual tests for each function, e.g. `tests/test_is_before.py` for `isBefore()` as well as a test file to rn all tests againts OWL TIME's [test suite](https://github.com/w3c/sdw/tree/gh-pages/time/test-suite)): `tests/test_test_suite.py`.
+There are individual tests for each function, along with more granular tests for supporting Python classes (Cells and CellCollections), as well as application of the functions without RDF. 
 
 ## Contributing
 Via GitHub, Issues & Pull Requests: 
