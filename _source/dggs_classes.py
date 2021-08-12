@@ -515,6 +515,7 @@ class Cell:
         return Cell(tuple(neighbour))
 
     def rotate_entry(self, x, quarter_turns):
+        # using code from https://github.com/manaakiwhenua/rhealpixdggs-py
         """
         Let N = self.N_side and rotate the N x N matrix of subcell numbers ::
 
