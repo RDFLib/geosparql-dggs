@@ -624,7 +624,7 @@ class Cell:
         else:
             resolution_delta = resolution - self.resolution
         children_tuples = [
-            self.suid + i for i in product(range(self.N ** 3), repeat=resolution_delta)
+            self.suid + i for i in product(range(self.N ** 2), repeat=resolution_delta)
         ]
         children_cells_list = [Cell(cell_tuple) for cell_tuple in children_tuples]
         return children_cells_list
