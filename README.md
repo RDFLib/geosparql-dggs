@@ -58,7 +58,7 @@ The above stript outputs:
 True
 ```
 ## Function Definitions
-The Simple Feature relations have been interpreted in the following way for the context of a nested square DGGS grid (such as rHEALPix grids.  
+The Simple Feature relations have been interpreted in the following way for the context of a nested square DGGS grid (such as rHEALPix grids).  
 
 **dggs:sfEqual:** Two sets of cells are equal if they have the same identifier.  
 **dggs:sfWithin:** One set of cells (A) is within some other set of cells (B) if the addition of A's cells to B results in a set of cells equal to B, where A is not equal to B.  
