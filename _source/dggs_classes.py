@@ -515,6 +515,7 @@ class Cell:
         return Cell(tuple(neighbour))
 
     def rotate_entry(self, x, quarter_turns):
+        # using code from https://github.com/manaakiwhenua/rhealpixdggs-py
         """
         Let N = self.N_side and rotate the N x N matrix of subcell numbers ::
 
@@ -624,7 +625,7 @@ class Cell:
         else:
             resolution_delta = resolution - self.resolution
         children_tuples = [
-            self.suid + i for i in product(range(self.N ** 3), repeat=resolution_delta)
+            self.suid + i for i in product(range(self.N ** 2), repeat=resolution_delta)
         ]
         children_cells_list = [Cell(cell_tuple) for cell_tuple in children_tuples]
         return children_cells_list
