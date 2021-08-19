@@ -1,5 +1,5 @@
 from rdflib import Literal
-from _source import (
+from rhealsf import (
     sfOverlaps,
     sfEquals,
     sfTouches,
