@@ -69,7 +69,7 @@ The Simple Feature relations have been interpreted in the following way for the 
 * **dggs:sfOverlaps:** One set of cells (A) overlaps some other set of cells (B) where the addition of A's cells to B results in a set of cells different from A and B, and A and B are not disjoint and do not touch.
 
 ## Testing
-All tests are in `tests/` and implemented using [unittest](http://docs.python.org/library/unittest.html).
+All tests are in `tests/` and implemented using [pytest](https://docs.pytest.org/en/6.2.x/index.html).
 
 There are individual tests for each function, along with more granular tests for supporting Python classes (Cells and CellCollections), as well as application of the functions without RDF. 
 
