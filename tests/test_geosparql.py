@@ -3,8 +3,7 @@ from gsdggs import DGGS
 
 GEO = Namespace("http://www.opengis.net/ont/geosparql#")
 
-# use image from geosparql 1.1 spec, recreate this as a set of cells,
-# then create a truth table, then for each geometry apply the functions
+# image showing cells is in tests folder
 g = Graph()
 geom_a = URIRef("https://geom-a")
 geom_b = URIRef("https://geom-b")
