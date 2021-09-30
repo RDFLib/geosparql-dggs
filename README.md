@@ -4,11 +4,13 @@ This library provides support for the [GeoSPARQL 1.1 Simple Features Relation Fa
 for geometries expressed as [DGGS Literals](https://opengeospatial.github.io/ogc-geosparql/geosparql11/spec.html#_rdfs_datatype_geodggsliteral).
 Currently, [rHEALPix DGGS](https://iopscience.iop.org/article/10.1088/1755-1315/34/1/012012/pdf) Grids are supported.  
 
-## Installation 
-Coming to PyPI.
+## Installation
+From the python package index, PyPi: https://pypi.org/project/geosparql-dggs/  
+`pip install geosparql-dggs`
 
-This package's only non-standard dependency is [RDFlib](https://pypi.org/project/rdflib/).
-
+This package depends on to support the functions' use against graphs [RDFlib](https://pypi.org/project/rdflib/). The functions themselves depend on the [rHEAL-sf](https://github.com/surroundaustralia/rhealpix-sf/) 
+library, which in turn depends on the [rHEAL-geo](https://github.com/surroundaustralia/rhealpix-geo/) library for the base classes
+which represent DGGS Cells and collections of Cells. 
 ## Use
 These functions are implemented in RDFlib Python in the file `gsdggs/sf_functions.py` and are imported into `gsdggs/__init__.py` and registered there in RDFlib as SPARQL extension functions with their IRIs.
 
