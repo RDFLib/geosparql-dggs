@@ -20,25 +20,28 @@ This means they can be used like this (full working script):
 from rdflib import Literal, Graph, Namespace, URIRef
 from gsdggs import DGGS
 
+EX = Namespace("http://example.com/")
 GEO = Namespace("http://www.opengis.net/ont/geosparql#")
 
-# Define the DGGS Geometries
+# Define the DGGS Geometries, add them to an in-memory RDF graph
 g = Graph()
-geom_a = URIRef('https://geom-a')
-geom_b = URIRef('https://geom-b')
-geom_c = URIRef('https://geom-c')
-g.add((geom_a, GEO.hasGeometry, Literal('CELLLIST ((R0 R10 R13 R16 R30 R31 R32 R40))')))
-g.add((geom_b, GEO.hasGeometry, Literal('CELLLIST ((R06 R07 R30 R31))')))
-g.add((geom_c, GEO.hasGeometry, Literal('CELLLIST ((R11 R12 R14 R15))')))
+g.add((URIRef('https://geom-a'), GEO.asDGGS, Literal('CELLLIST ((R0 R10 R13 R16 R30 R31 R32 R40))', EX.ausPixLiteral)))
+g.add((URIRef('https://geom-b'), GEO.asDGGS, Literal('CELLLIST ((R06 R07 R30 R31))', EX.ausPixLiteral)))
+g.add((URIRef('https://geom-c'), GEO.asDGGS, Literal('CELLLIST ((R11 R12 R14 R15))', EX.ausPixLiteral)))
 
+# Query the in-memory graph
 q = """
     PREFIX geo: <http://www.opengis.net/ont/geosparql#>
     PREFIX dggs: <https://placeholder.com/dggsfuncs/>
+    
     SELECT ?a ?b 
-        {?a geo:hasGeometry ?a_geom .
-         ?b geo:hasGeometry ?b_geom .
-         FILTER dggs:sfWithin(?a_geom, ?b_geom)
+    WHERE {
+        ?a geo:asDGGS ?a_geom .
+        ?b geo:asDGGS ?b_geom .
+        
+        FILTER dggs:sfWithin(?a_geom, ?b_geom)
     }"""
+# Interate through and print results
 for r in g.query(q):
     print(f"{r['a']} is within {r['b']}")
 ```
